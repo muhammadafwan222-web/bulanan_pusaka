@@ -52,7 +52,7 @@
         .modal-buttons button { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; }
         .btn-primary { background: #2a5298; color: white; }
         .btn-secondary { background: #e0e0e0; color: #333; }
-        .notification { position: fixed; top: 20px; right: 20px; padding: 15px 25px; border-radius: 10px; color: white; font-weight: 600; z-index: 10000; animation: slideIn 0.3s ease; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        .notification { position: fixed; top: 20px; right: 20px; padding: 15px 25px; border-radius: 10px; color: white; font-weight: 600; z-index: 10000; animation: slideIn 0.3s ease; box-shadow: 0 5px 15px rgba(0,0,0,0.3); max-width: 400px; }
         .notification.success { background: #4caf50; }
         .notification.error { background: #f44336; }
         .notification.info { background: #2196f3; }
@@ -70,17 +70,18 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1> Upload Dokumen Bulanan</h1>
+            <h1>📋 Upload Dokumen Bulanan</h1>
             <p>Absensi • Uang Makan • Tukin • SKAKPT</p>
-            <button class="btn-admin" onclick="openAdminModal()">⚙️ Admin</button>
+            <button class="btn-admin" onclick="openAdminModal()">️ Admin</button>
         </div>
 
         <div class="card">
             <h2>⚙️ Konfigurasi</h2>
             <div class="form-group">
                 <label>URL Google Apps Script:</label>
-                <input type="text" id="apiUrl" value="https://script.google.com/macros/s/AKfycbzDuPAp9A21IhMZgKCjo-sM9GPBDYuakBSv8bOUuYUqwskxBATmYnJR7vheMFX4KDGW/exec" readonly style="background:#f5f5f5; color:#666;" />
+                <input type="text" id="apiUrl" placeholder="Paste URL Web App Anda di sini..." />
             </div>
+            <button class="btn-refresh" onclick="saveConfig()" style="margin-top:10px;">💾 Simpan URL</button>
         </div>
 
         <div class="deadline-info">⏰ Batas waktu upload: <strong>Tanggal 5 setiap bulan</strong></div>
@@ -95,18 +96,12 @@
                 <div class="form-group">
                     <label>Bulan:</label>
                     <select id="bulanSelect">
-                        <option value="01">Januari</option>
-                        <option value="02">Februari</option>
-                        <option value="03">Maret</option>
-                        <option value="04">April</option>
-                        <option value="05">Mei</option>
-                        <option value="06">Juni</option>
-                        <option value="07">Juli</option>
-                        <option value="08">Agustus</option>
-                        <option value="09">September</option>
-                        <option value="10">Oktober</option>
-                        <option value="11">November</option>
-                        <option value="12">Desember</option>
+                        <option value="01">Januari</option><option value="02">Februari</option>
+                        <option value="03">Maret</option><option value="04">April</option>
+                        <option value="05">Mei</option><option value="06">Juni</option>
+                        <option value="07">Juli</option><option value="08">Agustus</option>
+                        <option value="09">September</option><option value="10">Oktober</option>
+                        <option value="11">November</option><option value="12">Desember</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -139,9 +134,7 @@
 
         <div class="card">
             <h2>📊 Status Upload Pegawai</h2>
-            <div class="month-info" id="monthInfo">
-                📅 Menampilkan status upload untuk bulan: <strong id="displayMonth">-</strong>
-            </div>
+            <div class="month-info">📅 Menampilkan status untuk bulan: <strong id="displayMonth">-</strong></div>
             <div class="summary-bar">
                 <span class="info" id="summary-text">Memuat data...</span>
                 <button class="btn-refresh" onclick="loadStatus()">🔄 Refresh</button>
@@ -158,7 +151,6 @@
         <div class="footer"><p>© 2024 - Sistem Upload Dokumen | File tersimpan di Google Drive</p></div>
     </div>
 
-    <!-- Modal Admin -->
     <div class="modal" id="modalLogin">
         <div class="modal-content">
             <h3>🔐 Login Admin</h3>
@@ -184,7 +176,7 @@
     <div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div></div>
 
     <script>
-        let API_URL = document.getElementById('apiUrl').value;
+        let API_URL = localStorage.getItem('apiUrl') || '';
         let peopleList = JSON.parse(localStorage.getItem('peopleList') || '[]');
         let uploadData = {};
         let isAdminLoggedIn = sessionStorage.getItem('isAdmin') === 'true';
@@ -197,7 +189,8 @@
         };
 
         document.addEventListener('DOMContentLoaded', function() {
-            // Set dropdown bulan ke bulan sebelumnya (default)
+            document.getElementById('apiUrl').value = API_URL;
+            
             const now = new Date();
             const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
             const prevMonthNum = String(prevMonth.getMonth() + 1).padStart(2, '0');
@@ -205,25 +198,28 @@
             
             document.getElementById('bulanSelect').value = prevMonthNum;
             
-            // Set dropdown tahun (2020 - 2030)
             const tahunSelect = document.getElementById('tahunSelect');
             for (let year = 2020; year <= 2030; year++) {
                 const opt = document.createElement('option');
-                opt.value = year;
-                opt.textContent = year;
+                opt.value = year; opt.textContent = year;
                 if (year === prevYear) opt.selected = true;
                 tahunSelect.appendChild(opt);
             }
             
             populateNameDropdown();
-            loadStatus();
+            if (API_URL) loadStatus();
         });
 
-        // Dapatkan format bulan YYYY-MM dari dropdown
+        function saveConfig() {
+            API_URL = document.getElementById('apiUrl').value.trim();
+            if (!API_URL) return showNotification('URL tidak boleh kosong!', 'error');
+            localStorage.setItem('apiUrl', API_URL);
+            showNotification('URL disimpan! Status akan dimuat.', 'success');
+            loadStatus();
+        }
+
         function getSelectedMonth() {
-            const bulan = document.getElementById('bulanSelect').value;
-            const tahun = document.getElementById('tahunSelect').value;
-            return tahun + '-' + bulan;
+            return document.getElementById('tahunSelect').value + '-' + document.getElementById('bulanSelect').value;
         }
 
         function populateNameDropdown() {
@@ -236,7 +232,6 @@
             });
         }
 
-        // --- ADMIN ---
         function openAdminModal() {
             if (isAdminLoggedIn) {
                 document.getElementById('peopleList').value = peopleList.join('\n');
@@ -262,7 +257,6 @@
             isAdminLoggedIn = false;
             sessionStorage.removeItem('isAdmin');
             closeModal('modalAdmin');
-            showNotification('Logout berhasil', 'info');
         }
         function saveAdminSettings() {
             const text = document.getElementById('peopleList').value.trim();
@@ -274,11 +268,10 @@
             loadStatus();
             closeModal('modalAdmin');
             document.getElementById('newPassword').value = '';
-            showNotification('Data admin disimpan!', 'success');
+            showNotification('Data admin disimpan! (' + peopleList.length + ' pegawai)', 'success');
         }
         function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
-        // --- UPLOAD ---
         function updateBox(cat) {
             const file = document.getElementById('file-' + cat).files[0];
             const fn = document.getElementById('fn-' + cat);
@@ -296,8 +289,8 @@
             const nama = document.getElementById('nama').value;
             const bulan = getSelectedMonth();
             
+            if (!API_URL) return showNotification('URL Apps Script belum dikonfigurasi!', 'error');
             if (!nama) return showNotification('Pilih nama pegawai!', 'error');
-            if (!bulan) return showNotification('Pilih bulan dan tahun!', 'error');
 
             const categories = ['absensi', 'uangmakan', 'tukin', 'skakpt'];
             const filesToUpload = [];
@@ -330,10 +323,7 @@
                     });
                     const result = await response.json();
                     if (result.success) successCount++; else failCount++;
-                } catch (error) {
-                    failCount++;
-                    console.error(error);
-                }
+                } catch (error) { failCount++; console.error(error); }
             }
 
             showLoading(false);
@@ -343,7 +333,7 @@
                     document.getElementById('file-' + cat).value = '';
                     updateBox(cat);
                 });
-                loadStatus();
+                setTimeout(() => loadStatus(), 2000);
             }
             if (failCount > 0) showNotification(`❌ ${failCount} file gagal`, 'error');
         }
@@ -357,28 +347,24 @@
             });
         }
 
-        // --- STATUS ---
         async function loadStatus() {
+            if (!API_URL) return;
             const bulan = getSelectedMonth();
-            if (!bulan) return;
-            
-            // Update display
             const bulanNum = bulan.split('-')[1];
             const tahun = bulan.split('-')[0];
             document.getElementById('displayMonth').textContent = monthNames[bulanNum] + ' ' + tahun;
             
+            document.getElementById('summary-text').textContent = 'Memuat data...';
+            
             try {
-                const response = await fetch(API_URL + '?action=getStatus&bulan=' + bulan);
+                const response = await fetch(API_URL + '?action=getStatus&bulan=' + encodeURIComponent(bulan));
                 const result = await response.json();
                 if (result.success) {
                     uploadData = result.data || {};
                     renderStatus();
-                } else {
-                    showNotification('Gagal memuat status: ' + (result.error || 'Unknown'), 'error');
                 }
             } catch (error) {
-                document.getElementById('summary-text').textContent = 'Gagal memuat data: ' + error.message;
-                console.error(error);
+                document.getElementById('summary-text').textContent = 'Gagal memuat data';
             }
         }
 
@@ -423,7 +409,6 @@
             document.getElementById('loadingOverlay').classList.toggle('active', show);
         }
         
-        // Auto refresh saat bulan/tahun berubah
         document.getElementById('bulanSelect').addEventListener('change', loadStatus);
         document.getElementById('tahunSelect').addEventListener('change', loadStatus);
     </script>
