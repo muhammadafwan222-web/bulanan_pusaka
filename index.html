@@ -170,7 +170,43 @@
         // URL API DI-HARDCODE DI SINI AGAR PERMANEN UNTUK SEMUA PENGGUNA
         const API_URL = 'https://script.google.com/macros/s/AKfycbziSKDNjp7MEprsHjvlxagDCIpfJG2L45KIM5M3pC93-LVNniMzKY58wRhnAO0nyRE/exec';
         
-        let peopleList = JSON.parse(localStorage.getItem('peopleList') || '[]');
+        // DAFTAR NAMA PEGAWAI PERMANEN UNTUK SEMUA PENGGUNA
+let peopleList = [
+    "Agust Tommy",
+    "AHMAD JAINI",
+    "ANSYARIATUL AQIDAH",
+    "Arif Ikhwani",
+    "AULIA RAHMAN",
+    "Bahriani",
+    "Darmawati",
+    "DEWI GUSTIANA",
+    "FITRIAH",
+    "FITRIYAH",
+    "H. ARIF RAHMAN",
+    "HAIRUN NAZMI",
+    "ISMIT, S.Pd.I, MM",
+    "KARTIKA SARI",
+    "Lulu Arifah Rahmah",
+    "MASWANDI",
+    "muhaimin",
+    "MUHAMMAD NOOR",
+    "NOOR LAILA",
+    "NORBAYAH",
+    "Rahmawati",
+    "RAUDAH ABSHAR",
+    "RETNASARI",
+    "Rika Masriani",
+    "RINA PURNAMI",
+    "ROSNAH",
+    "Rusinawati",
+    "SALAMIAH",
+    "SITI OLFAH",
+    "SRI HERNIWATI",
+    "SUMIATI",
+    "SYAHRUNI",
+    "WINDA ANGGIAZIDA",
+    "ZAINORRAHMAN"
+];
         let uploadData = {};
         let isAdminLoggedIn = sessionStorage.getItem('isAdmin') === 'true';
         const ADMIN_PASSWORD = localStorage.getItem('adminPassword') || 'admin123';
