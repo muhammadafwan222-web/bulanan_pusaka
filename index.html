@@ -75,15 +75,6 @@
             <button class="btn-admin" onclick="openAdminModal()">⚙️ Admin</button>
         </div>
 
-        <div class="card">
-            <h2>⚙️ Konfigurasi</h2>
-            <div class="form-group">
-                <label>URL Google Apps Script:</label>
-                <input type="text" id="apiUrl" placeholder="Paste URL Web App Anda di sini..." />
-            </div>
-            <button class="btn-refresh" onclick="saveConfig()" style="margin-top:10px;">💾 Simpan URL</button>
-        </div>
-
         <div class="deadline-info">⏰ Batas waktu upload: <strong>Tanggal 5 setiap bulan</strong></div>
 
         <div class="card">
@@ -176,7 +167,9 @@
     <div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div></div>
 
     <script>
-        let API_URL = localStorage.getItem('apiUrl') || '';
+        // URL API DI-HARDCODE DI SINI AGAR PERMANEN UNTUK SEMUA PENGGUNA
+        const API_URL = 'https://script.google.com/macros/s/AKfycbziSKDNjp7MEprsHjvlxagDCIpfJG2L45KIM5M3pC93-LVNniMzKY58wRhnAO0nyRE/exec';
+        
         let peopleList = JSON.parse(localStorage.getItem('peopleList') || '[]');
         let uploadData = {};
         let isAdminLoggedIn = sessionStorage.getItem('isAdmin') === 'true';
@@ -189,8 +182,6 @@
         };
 
         document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('apiUrl').value = API_URL;
-            
             const now = new Date();
             const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
             const prevMonthNum = String(prevMonth.getMonth() + 1).padStart(2, '0');
@@ -207,16 +198,8 @@
             }
             
             populateNameDropdown();
-            if (API_URL) loadStatus();
-        });
-
-        function saveConfig() {
-            API_URL = document.getElementById('apiUrl').value.trim();
-            if (!API_URL) return showNotification('URL tidak boleh kosong!', 'error');
-            localStorage.setItem('apiUrl', API_URL);
-            showNotification('URL disimpan! Status akan dimuat.', 'success');
             loadStatus();
-        }
+        });
 
         function getSelectedMonth() {
             return document.getElementById('tahunSelect').value + '-' + document.getElementById('bulanSelect').value;
@@ -289,7 +272,6 @@
             const nama = document.getElementById('nama').value;
             const bulan = getSelectedMonth();
             
-            if (!API_URL) return showNotification('URL Apps Script belum dikonfigurasi!', 'error');
             if (!nama) return showNotification('Pilih nama pegawai!', 'error');
 
             const categories = ['absensi', 'uangmakan', 'tukin', 'skakpt'];
@@ -348,7 +330,6 @@
         }
 
         async function loadStatus() {
-            if (!API_URL) return;
             const bulan = getSelectedMonth();
             const bulanNum = bulan.split('-')[1];
             const tahun = bulan.split('-')[0];
