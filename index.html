@@ -576,126 +576,141 @@
             document.getElementById(id).classList.remove('active');
         }
 
-        // ============ FUNGSI UPLOAD ============
-        function updateBox(category) {
-            const fileInput = document.getElementById('file-' + category);
-            const fn = document.getElementById('fn-' + category);
-            const box = document.getElementById('box-' + category);
-            if (fileInput.files.length > 0) {
-                fn.textContent = fileInput.files[0].name;
-                box.classList.add('has-file');
-            } else {
-                fn.textContent = 'Klik untuk pilih file';
-                box.classList.remove('has-file');
-            }
+// ============ FUNGSI UPLOAD (FIXED - CORS) ============
+function updateBox(category) {
+    const fileInput = document.getElementById('file-' + category);
+    const fn = document.getElementById('fn-' + category);
+    const box = document.getElementById('box-' + category);
+    if (fileInput.files.length > 0) {
+        fn.textContent = fileInput.files[0].name;
+        box.classList.add('has-file');
+    } else {
+        fn.textContent = 'Klik untuk pilih file';
+        box.classList.remove('has-file');
+    }
+}
+
+async function uploadAll() {
+    if (!API_URL) {
+        showNotification('Konfigurasi URL belum diatur!', 'error');
+        return;
+    }
+
+    const nama = document.getElementById('nama').value;
+    const bulan = document.getElementById('bulan').value;
+
+    if (!nama) { showNotification('Pilih nama pegawai!', 'error'); return; }
+    if (!bulan) { showNotification('Pilih bulan!', 'error'); return; }
+
+    const categories = ['absensi', 'uangmakan', 'tukin', 'skakpt'];
+    const filesToUpload = [];
+    for (const cat of categories) {
+        const fileInput = document.getElementById('file-' + cat);
+        if (fileInput.files.length > 0) {
+            filesToUpload.push({ category: cat, file: fileInput.files[0] });
         }
+    }
 
-        async function uploadAll() {
-            if (!API_URL) {
-                showNotification('Konfigurasi URL belum diatur!', 'error');
-                return;
+    if (filesToUpload.length === 0) {
+        showNotification('Pilih minimal 1 file untuk diupload!', 'error');
+        return;
+    }
+
+    showLoading(true);
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const item of filesToUpload) {
+        try {
+            if (item.file.size > 10 * 1024 * 1024) {
+                showNotification(`File ${item.category} terlalu besar (max 10MB)`, 'error');
+                failCount++;
+                continue;
             }
 
-            const nama = document.getElementById('nama').value;
-            const bulan = document.getElementById('bulan').value;
+            const base64 = await fileToBase64(item.file);
 
-            if (!nama) { showNotification('Pilih nama pegawai!', 'error'); return; }
-            if (!bulan) { showNotification('Pilih bulan!', 'error'); return; }
-
-            // Kumpulkan file yang dipilih
-            const categories = ['absensi', 'uangmakan', 'tukin', 'skakpt'];
-            const filesToUpload = [];
-            for (const cat of categories) {
-                const fileInput = document.getElementById('file-' + cat);
-                if (fileInput.files.length > 0) {
-                    filesToUpload.push({ category: cat, file: fileInput.files[0] });
-                }
-            }
-
-            if (filesToUpload.length === 0) {
-                showNotification('Pilih minimal 1 file untuk diupload!', 'error');
-                return;
-            }
-
-            showLoading(true);
-            let successCount = 0;
-            let failCount = 0;
-
-            for (const item of filesToUpload) {
-                try {
-                    if (item.file.size > 10 * 1024 * 1024) {
-                        showNotification(`File ${item.category} terlalu besar (max 10MB)`, 'error');
-                        failCount++;
-                        continue;
-                    }
-
-                    const base64 = await fileToBase64(item.file);
-                    const formData = new FormData();
-                    formData.append('file', base64);
-                    formData.append('filename', item.file.name);
-                    formData.append('mimeType', item.file.type);
-                    formData.append('category', item.category);
-                    formData.append('nama', nama);
-                    formData.append('bulan', bulan);
-
-                    const response = await fetch(API_URL, { method: 'POST', body: formData });
-                    const result = await response.json();
-
-                    if (result.success) {
-                        successCount++;
-                    } else {
-                        failCount++;
-                    }
-                } catch (error) {
-                    failCount++;
-                }
-            }
-
-            showLoading(false);
-
-            if (successCount > 0) {
-                showNotification(`✅ ${successCount} file berhasil diupload!`, 'success');
-                // Reset form
-                categories.forEach(cat => {
-                    document.getElementById('file-' + cat).value = '';
-                    updateBox(cat);
-                });
-                loadStatus();
-            }
-            if (failCount > 0) {
-                showNotification(`❌ ${failCount} file gagal diupload`, 'error');
-            }
-        }
-
-        function fileToBase64(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result.split(',')[1]);
-                reader.onerror = reject;
-                reader.readAsDataURL(file);
+            // ✅ KIRIM SEBAGAI JSON STRING (bukan FormData) untuk hindari CORS
+            const payload = JSON.stringify({
+                file: base64,
+                filename: item.file.name,
+                mimeType: item.file.type,
+                category: item.category,
+                nama: nama,
+                bulan: bulan
             });
-        }
 
-        // ============ FUNGSI STATUS ============
-        async function loadStatus() {
-            if (!API_URL) {
-                document.getElementById('summary-text').textContent = 'URL belum dikonfigurasi';
-                return;
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                mode: 'cors',
+                headers: {
+                    'Content-Type': 'text/plain;charset=utf-8'  // ✅ text/plain hindari preflight CORS
+                },
+                body: payload
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                successCount++;
+            } else {
+                failCount++;
+                console.error('Error:', result.error);
             }
-
-            const bulan = document.getElementById('bulan').value || getCurrentMonth();
-
-            try {
-                const response = await fetch(API_URL + '?action=getStatus&bulan=' + bulan);
-                const result = await response.json();
-                if (result.success) {
-                    uploadData = result.data || {};
-                    renderStatus();
-                }
-            } catch (error) {
-                document.getElementById('summary-text').textContent = 'Gagal memuat data';
-            }
+        } catch (error) {
+            failCount++;
+            console.error('Upload error:', error);
         }
+    }
+
+    showLoading(false);
+
+    if (successCount > 0) {
+        showNotification(`✅ ${successCount} file berhasil diupload!`, 'success');
+        categories.forEach(cat => {
+            document.getElementById('file-' + cat).value = '';
+            updateBox(cat);
+        });
+        loadStatus();
+    }
+    if (failCount > 0) {
+        showNotification(` ${failCount} file gagal diupload`, 'error');
+    }
+}
+
+function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+// ============ FUNGSI STATUS (FIXED) ============
+async function loadStatus() {
+    if (!API_URL) {
+        document.getElementById('summary-text').textContent = 'URL belum dikonfigurasi';
+        return;
+    }
+
+    const bulan = document.getElementById('bulan').value || getCurrentMonth();
+
+    try {
+        // ✅ GET request biasanya tidak bermasalah CORS
+        const response = await fetch(API_URL + '?action=getStatus&bulan=' + bulan, {
+            method: 'GET'
+        });
+        const result = await response.json();
+        if (result.success) {
+            uploadData = result.data || {};
+            renderStatus();
+        }
+    } catch (error) {
+        document.getElementById('summary-text').textContent = 'Gagal memuat data: ' + error.message;
+        console.error('Load status error:', error);
+    }
+}
 
         function renderStatus() {
             const tbody = document.getElementById('status-body');
