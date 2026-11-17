@@ -30,6 +30,7 @@
   .tab-active  { @apply bg-white shadow-sm text-indigo-700; }
   .fchip       { @apply rounded-full px-3 py-1.5 text-xs font-semibold border border-slate-200 bg-white text-slate-600 hover:border-indigo-300 transition whitespace-nowrap; }
   .fchip-on    { @apply bg-indigo-600 text-white border-indigo-600 hover:border-indigo-600 shadow shadow-indigo-600/30; }
+  .pkgchk      { @apply inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium cursor-pointer hover:border-indigo-300 transition select-none; }
 </style>
 <style>
   :root { color-scheme: light; }
@@ -67,9 +68,11 @@
   @keyframes pulseDot { 0%,100% { box-shadow: 0 0 0 0 rgba(16,185,129,.5); } 50% { box-shadow: 0 0 0 6px rgba(16,185,129,0); } }
 
   .mini { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 9999px; white-space: nowrap; }
-  .mini.ok { background: #d1fae5; color: #047857; border: 1px solid #a7f3d0; }
+  .mini.ok  { background: #d1fae5; color: #047857; border: 1px solid #a7f3d0; }
   .mini.ok:hover { background: #a7f3d0; }
-  .mini.no { background: #ffe4e6; color: #be123c; border: 1px solid #fecdd3; }
+  .mini.no  { background: #ffe4e6; color: #be123c; border: 1px solid #fecdd3; }
+  .mini.off { background: #f1f5f9; color: #94a3b8; border: 1px solid #e2e8f0; }
+  .mini.req { background: #eef2ff; color: #4338ca; border: 1px solid #e0e7ff; }
 
   .dropzone { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
     border: 2px dashed #c7d2fe; border-radius: .8rem; padding: 14px 10px; cursor: pointer; text-align: center;
@@ -119,7 +122,7 @@
         <span class="h-2 w-2 rounded-full bg-emerald-500 pulse-dot"></span> LIVE · TERHUBUNG GOOGLE DRIVE &amp; SHEETS
       </span>
       <h1 class="font-display text-3xl sm:text-4xl font-extrabold hero-grad leading-tight">Upload Dokumen Bulanan Pegawai</h1>
-      <p class="text-slate-500 mt-3 text-sm sm:text-base max-w-2xl mx-auto">Pilih file untuk beberapa kategori sekaligus, lalu <b class="text-indigo-600">satu klik upload semua</b>. Pantau siapa yang sudah &amp; belum lengkap langsung di papan status.</p>
+      <p class="text-slate-500 mt-3 text-sm sm:text-base max-w-2xl mx-auto">Setiap pegawai punya <b class="text-indigo-600">paket dokumen wajib</b> sendiri (3 / 4 / 5 dokumen). Pilih file beberapa kategori sekaligus, lalu <b class="text-indigo-600">satu klik upload semua</b>.</p>
     </div>
 
     <div class="grid lg:grid-cols-5 gap-6 items-start">
@@ -138,7 +141,7 @@
           <p class="text-[11px] text-slate-400 mt-1.5">Mengubah bulan juga memperbarui papan status di samping.</p>
         </div>
         <button id="btnMasuk" class="btn-primary w-full !py-3">Buka Dashboard Pegawai →</button>
-        <p class="text-[11px] text-slate-400 mt-4 leading-relaxed">💡 Atau klik langsung <b>nama pegawai</b> pada papan status untuk membuka dashboard-nya.</p>
+        <p class="text-[11px] text-slate-400 mt-4 leading-relaxed">💡 Klik langsung <b>nama pegawai</b> pada papan status untuk membuka dashboard-nya. Jumlah dokumen wajib tiap pegawai diatur oleh Admin.</p>
       </div>
 
       <!-- Papan status -->
@@ -179,7 +182,7 @@
           <input id="cariBoard" type="text" class="input mt-3 !py-2" placeholder="🔎 Cari nama di papan status…">
         </div>
         <div id="boardList" class="divide-y divide-slate-100 max-h-[520px] overflow-y-auto"></div>
-        <p class="px-5 py-3 text-[11px] text-slate-400 border-t border-slate-100 bg-slate-50/60">✓ hijau = sudah upload (klik untuk buka file) · ✕ merah = belum upload · klik nama untuk kelola dokumen.</p>
+        <p class="px-5 py-3 text-[11px] text-slate-400 border-t border-slate-100 bg-slate-50/60">✓ hijau = sudah upload (klik buka file) · ✕ merah = belum · — abu = tidak wajib bagi pegawai tsb · klik nama untuk kelola.</p>
       </div>
     </div>
   </section>
@@ -191,30 +194,31 @@
         <div id="pAvatar" class="h-12 w-12 shrink-0 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white flex items-center justify-center font-display font-extrabold text-lg shadow-lg shadow-indigo-600/25">?</div>
         <div class="min-w-0">
           <h2 id="pNama" class="font-display font-extrabold text-lg text-slate-900 truncate">—</h2>
-          <p class="text-sm text-slate-500">Periode: <span id="pBulan" class="font-medium text-slate-700">—</span></p>
+          <p class="text-sm text-slate-500">Periode: <span id="pBulan" class="font-medium text-slate-700">—</span> · <span id="pPaket" class="font-semibold text-indigo-600">—</span></p>
         </div>
       </div>
       <div class="flex items-center gap-2 shrink-0">
-        <span id="pBadge" class="chip-no">0/5</span>
+        <span id="pBadge" class="chip-no">0/0</span>
         <button id="btnRefreshPegawai" class="btn-ghost !px-2.5" title="Muat ulang status">🔄</button>
         <button id="btnGanti" class="btn-ghost">← Ganti</button>
       </div>
     </div>
 
     <div class="rounded-xl bg-indigo-50/80 border border-indigo-100 px-4 py-3 mb-5 text-sm text-indigo-800 fade-up" style="animation-delay:60ms">
-      ⚡ <b>Satu klik untuk semua:</b> pilih file pada kartu-kartu di bawah (boleh beberapa sekaligus, bisa diseret/drag), lalu tekan <b>Upload Semua</b> di bilah bawah.
+      ⚡ <b>Satu klik untuk semua:</b> dokumen wajib Anda: <span id="pInfoCats" class="font-semibold">—</span>. Pilih file pada kartu di bawah (boleh beberapa sekaligus, bisa diseret), lalu tekan <b>Upload Semua</b>.
     </div>
 
     <div class="grid lg:grid-cols-3 gap-6 items-start">
       <div id="uploadCards" class="lg:col-span-2 space-y-4"></div>
       <div class="card p-5 lg:sticky lg:top-24 fade-up" style="animation-delay:120ms">
-        <h3 class="font-display font-bold text-slate-900 mb-1">✅ Status Dokumen</h3>
-        <p id="progressText" class="text-xs text-slate-500 mb-3">0 dari 5 dokumen terupload</p>
+        <h3 class="font-display font-bold text-slate-900 mb-1">✅ Status Dokumen Wajib</h3>
+        <p id="progressText" class="text-xs text-slate-500 mb-3">0 dari 0 dokumen terupload</p>
         <div class="h-2.5 rounded-full bg-slate-100 overflow-hidden mb-3">
           <div id="progressBar" class="h-full bg-gradient-to-r from-emerald-400 to-teal-500 rounded-full transition-all duration-700" style="width:0%"></div>
         </div>
-        <div id="completeBanner" class="hidden mb-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-sm font-semibold px-4 py-3 pop">🎉 Semua dokumen bulan ini LENGKAP!</div>
+        <div id="completeBanner" class="hidden mb-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-sm font-semibold px-4 py-3 pop">🎉 Semua dokumen wajib bulan ini LENGKAP!</div>
         <ul id="checklistList" class="divide-y divide-slate-100"></ul>
+        <p id="chkNote" class="hidden text-[11px] text-slate-400 mt-2"></p>
         <p class="text-[11px] text-slate-400 mt-3">PDF / Excel / JPG / PNG · maks 10 MB per file. Upload ulang menggantikan file lama.</p>
       </div>
     </div>
@@ -248,7 +252,7 @@
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 fade-up">
       <div>
         <h2 class="font-display text-xl font-extrabold text-slate-900">Dashboard Admin</h2>
-        <p class="text-sm text-slate-500">Monitoring upload &amp; manajemen pegawai</p>
+        <p class="text-sm text-slate-500">Monitoring upload &amp; manajemen pegawai + paket dokumen</p>
       </div>
       <button id="btnLogout" class="btn-ghost">🚪 Logout</button>
     </div>
@@ -261,7 +265,7 @@
     <div id="panelMonitor">
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div class="card p-5"><p class="text-xs font-semibold text-slate-500 uppercase">Total Pegawai</p><p id="aStatTotal" class="text-3xl font-display font-extrabold text-slate-900 mt-1 tabular-nums">0</p></div>
-        <div class="card p-5 border-l-4 !border-l-emerald-500"><p class="text-xs font-semibold text-slate-500 uppercase">Lengkap (5/5)</p><p id="aStatLengkap" class="text-3xl font-display font-extrabold text-emerald-600 mt-1 tabular-nums">0</p></div>
+        <div class="card p-5 border-l-4 !border-l-emerald-500"><p class="text-xs font-semibold text-slate-500 uppercase">Lengkap (sesuai paket)</p><p id="aStatLengkap" class="text-3xl font-display font-extrabold text-emerald-600 mt-1 tabular-nums">0</p></div>
         <div class="card p-5 border-l-4 !border-l-rose-500"><p class="text-xs font-semibold text-slate-500 uppercase">Belum Lengkap</p><p id="aStatBelum" class="text-3xl font-display font-extrabold text-rose-600 mt-1 tabular-nums">0</p></div>
       </div>
       <div class="card overflow-hidden">
@@ -271,10 +275,10 @@
             <input id="bulanAdmin" type="month" class="input !w-auto !py-2">
             <button id="btnRefreshMonitor" class="btn-ghost !px-2.5" title="Muat ulang">🔄</button>
           </div>
-          <p class="text-xs text-slate-400">✅ = terupload (klik untuk buka) · ❌ = belum</p>
+          <p class="text-xs text-slate-400">✅ terupload (klik buka) · ❌ belum · <span class="mini off">—</span> tidak wajib</p>
         </div>
         <div class="overflow-x-auto">
-          <table class="w-full min-w-[780px]">
+          <table class="w-full min-w-[820px]">
             <thead class="bg-slate-50 border-b border-slate-100">
               <tr><th class="th">Pegawai</th><th class="th">Kehadiran</th><th class="th">Uang Makan</th><th class="th">Tukin</th><th class="th">SKAPT</th><th class="th">Selisih Tukin</th><th class="th">Status</th></tr>
             </thead>
@@ -287,16 +291,24 @@
     <div id="panelPegawai" class="hidden">
       <div class="card p-5 mb-4">
         <label class="label" for="inputNamaBaru">Tambah Pegawai Baru</label>
-        <div class="flex flex-col sm:flex-row gap-2">
+        <div class="flex flex-col sm:flex-row gap-2 mb-3">
           <input id="inputNamaBaru" type="text" class="input flex-1" placeholder="Contoh: Budi Santoso, S.Kom">
+          <select id="selPaketBaru" class="input sm:!w-72">
+            <option value="3">📦 Paket 3 — Kehadiran, Uang Makan, Tukin</option>
+            <option value="4">📦 Paket 4 — + SKAPT</option>
+            <option value="5" selected>📦 Paket 5 — Semua dokumen</option>
+            <option value="custom">⚙️ Khusus — centang manual di bawah</option>
+          </select>
           <button id="btnTambah" class="btn-primary">＋ Tambah</button>
         </div>
+        <p class="text-xs font-medium text-slate-500 mb-1.5">Dokumen yang diwajibkan:</p>
+        <div id="chkBaru" class="flex flex-wrap gap-2"></div>
       </div>
       <div class="card overflow-hidden">
         <div class="overflow-x-auto">
-          <table class="w-full min-w-[520px]">
+          <table class="w-full min-w-[760px]">
             <thead class="bg-slate-50 border-b border-slate-100">
-              <tr><th class="th w-12">No</th><th class="th">Nama Pegawai</th><th class="th">ID</th><th class="th text-right">Aksi</th></tr>
+              <tr><th class="th w-12">No</th><th class="th">Nama Pegawai</th><th class="th">Dokumen Wajib</th><th class="th">ID</th><th class="th text-right">Aksi</th></tr>
             </thead>
             <tbody id="tbodyPegawai" class="divide-y divide-slate-100"></tbody>
           </table>
@@ -313,9 +325,18 @@
 <!-- ============ MODAL EDIT PEGAWAI ============ -->
 <div id="modalEdit" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
   <div id="modalBackdrop" class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"></div>
-  <div class="card relative w-full max-w-md p-6 fade-up">
-    <h3 class="font-display font-bold text-lg text-slate-900 mb-4">✏️ Edit Nama Pegawai</h3>
+  <div class="card relative w-full max-w-md p-6 fade-up max-h-[85vh] overflow-y-auto">
+    <h3 class="font-display font-bold text-lg text-slate-900 mb-4">✏️ Edit Pegawai &amp; Paket Dokumen</h3>
+    <label class="label" for="inputEditNama">Nama Pegawai</label>
     <input id="inputEditNama" type="text" class="input mb-4">
+    <label class="label" for="selPaketEdit">Paket Dokumen Wajib</label>
+    <select id="selPaketEdit" class="input mb-3">
+      <option value="3">📦 Paket 3 — Kehadiran, Uang Makan, Tukin</option>
+      <option value="4">📦 Paket 4 — + SKAPT</option>
+      <option value="5">📦 Paket 5 — Semua dokumen</option>
+      <option value="custom">⚙️ Khusus — centang manual</option>
+    </select>
+    <div id="chkEdit" class="flex flex-wrap gap-2 mb-5"></div>
     <div class="flex justify-end gap-2">
       <button id="btnBatalEdit" class="btn-ghost">Batal</button>
       <button id="btnSimpanEdit" class="btn-primary">Simpan</button>
@@ -347,9 +368,9 @@
 
 <script>
 /* ================================================================
-   ⚠️ KONFIGURASI — URL WEB APP APPS SCRIPT ANDA (biarkan yang lama)
+   ⚠️ KONFIGURASI — URL WEB APP APPS SCRIPT ANDA (yang lama, /exec)
    ================================================================ */
-const API_URL = 'https://script.google.com/macros/s/AKfycby6nbhTZJ5HU2vmFvwR0pFdARurmFtw5bujuLaNSB-uF3HMOnIwUDQe-BiQmzQfw9T9/exec'; // contoh: https://script.google.com/macros/s/AKfycb.../exec
+const API_URL = 'https://script.google.com/macros/s/AKfycby6nbhTZJ5HU2vmFvwR0pFdARurmFtw5bujuLaNSB-uF3HMOnIwUDQe-BiQmzQfw9T9/exec';
 
 const KATEGORI = [
   { key:'Kehadiran',    label:'Kehadiran',     short:'Hadir',   icon:'📋', desc:'Rekap daftar hadir bulanan',        hue:'indigo' },
@@ -358,13 +379,19 @@ const KATEGORI = [
   { key:'SKAPT',        label:'SKAPT',         short:'SKAPT',   icon:'📄', desc:'Dokumen SKAPT',                     hue:'sky' },
   { key:'SelisihTukin', label:'Selisih Tukin', short:'Selisih', icon:'🧾', desc:'Dokumen selisih tunjangan kinerja', hue:'fuchsia' },
 ];
+const ALL_KEYS = KATEGORI.map(k => k.key);
+const PRESETS = {
+  '3': ['Kehadiran','UangMakan','Tukin'],
+  '4': ['Kehadiran','UangMakan','Tukin','SKAPT'],
+  '5': ['Kehadiran','UangMakan','Tukin','SKAPT','SelisihTukin']
+};
 const HUE = {
   indigo:'bg-indigo-50 text-indigo-600 border-indigo-100', amber:'bg-amber-50 text-amber-600 border-amber-100',
   emerald:'bg-emerald-50 text-emerald-600 border-emerald-100', sky:'bg-sky-50 text-sky-600 border-sky-100',
   fuchsia:'bg-fuchsia-50 text-fuchsia-600 border-fuchsia-100'
 };
 const MAX_FILE = 10 * 1024 * 1024;
-const BATCH_LIMIT = 20 * 1024 * 1024; // total per permintaan; lebih besar → dipecah otomatis (tetap 1 klik)
+const BATCH_LIMIT = 20 * 1024 * 1024;
 const ALLOWED_EXT = ['pdf','xls','xlsx','png','jpg','jpeg','webp'];
 const MIME_MAP = { pdf:'application/pdf', xls:'application/vnd.ms-excel',
   xlsx:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -386,11 +413,30 @@ function esc(s){ return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','
 function currentMonth(){ const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0'); }
 function bulanLabelID(b){ const [y,m] = b.split('-'); return BULAN_ID[parseInt(m,10)-1] + ' ' + y; }
 function fmtSize(b){ return b > 1048576 ? (b/1048576).toFixed(1)+' MB' : Math.ceil(b/1024)+' KB'; }
+function catsOf(p){ return (p && Array.isArray(p.kategori) && p.kategori.length) ? p.kategori : ALL_KEYS; }
+function sameSet(a, b){ return a.length === b.length && a.every(x => b.includes(x)); }
+function presetKeyOf(cats){
+  if (sameSet(cats, PRESETS['3'])) return '3';
+  if (sameSet(cats, PRESETS['4'])) return '4';
+  if (sameSet(cats, PRESETS['5'])) return '5';
+  return 'custom';
+}
+function paketBadge(cats){
+  const pk = presetKeyOf(cats);
+  const map = {
+    '3': ['bg-sky-100 text-sky-700', '3 Dok'],
+    '4': ['bg-violet-100 text-violet-700', '4 Dok'],
+    '5': ['bg-emerald-100 text-emerald-700', '5 Dok'],
+    'custom': ['bg-fuchsia-100 text-fuchsia-700', 'Khusus · ' + cats.length]
+  };
+  const [cls, txt] = map[pk];
+  const title = cats.map(k => (KATEGORI.find(x => x.key === k) || {}).label || k).join(', ');
+  return `<span class="rounded-full px-2 py-0.5 text-[10px] font-bold whitespace-nowrap ${cls}" title="Wajib: ${esc(title)}">${txt}</span>`;
+}
 const SVG_CHECK = '<svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>';
 const SVG_X = '<svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>';
 const SVG_SPIN = '<svg class="h-4 w-4 animate-spin text-indigo-500" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>';
 
-/* Body text/plain (simple request) — hindari Content-Type application/json agar bebas CORS */
 async function api(action, payload = {}) {
   if (!API_URL || API_URL.includes('GANTI_')) throw new Error('API_URL belum diisi. Edit index.html bagian KONFIGURASI.');
   const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action, ...payload }) });
@@ -431,6 +477,30 @@ function confetti() {
   }
 }
 
+/* ---------------- Paket: checkbox grup ---------------- */
+function renderChkGroup(containerId, selected){
+  $(containerId).innerHTML = KATEGORI.map(k => `
+    <label class="pkgchk">
+      <input type="checkbox" value="${k.key}" class="accent-indigo-600 h-3.5 w-3.5" ${selected.includes(k.key) ? 'checked' : ''}>
+      <span>${k.icon} ${k.label}</span>
+    </label>`).join('');
+}
+function getChkGroup(containerId){
+  const vals = Array.from($(containerId).querySelectorAll('input:checked')).map(i => i.value);
+  return ALL_KEYS.filter(k => vals.includes(k));
+}
+function applyPreset(selId, containerId){
+  const v = $(selId).value;
+  if (v !== 'custom') renderChkGroup(containerId, PRESETS[v]);
+}
+function syncSelectFromChk(selId, containerId){
+  $(selId).value = presetKeyOf(getChkGroup(containerId));
+}
+$('selPaketBaru').addEventListener('change', () => applyPreset('selPaketBaru', 'chkBaru'));
+$('chkBaru').addEventListener('change', () => syncSelectFromChk('selPaketBaru', 'chkBaru'));
+$('selPaketEdit').addEventListener('change', () => applyPreset('selPaketEdit', 'chkEdit'));
+$('chkEdit').addEventListener('change', () => syncSelectFromChk('selPaketEdit', 'chkEdit'));
+
 /* ---------------- Home: combobox ---------------- */
 async function loadPegawai() {
   try {
@@ -445,7 +515,8 @@ function renderDropdown(q) {
   const dd = $('dropdownPegawai');
   const f = state.pegawai.filter(p => p.nama.toLowerCase().includes((q || '').toLowerCase()));
   dd.innerHTML = f.length
-    ? f.map(p => `<li><button type="button" data-id="${esc(p.id)}" class="w-full text-left px-3 py-2.5 text-sm hover:bg-indigo-50 hover:text-indigo-700">${esc(p.nama)}</button></li>`).join('')
+    ? f.map(p => `<li><button type="button" data-id="${esc(p.id)}" class="w-full flex items-center gap-2 text-left px-3 py-2.5 text-sm hover:bg-indigo-50 hover:text-indigo-700">
+        <span class="flex-1 truncate">${esc(p.nama)}</span>${paketBadge(catsOf(p))}</button></li>`).join('')
     : '<li class="px-3 py-2.5 text-sm text-slate-400">Tidak ada hasil</li>';
   dd.classList.remove('hidden');
 }
@@ -469,14 +540,14 @@ $('bulanPegawai').addEventListener('change', () => { state.bulan = $('bulanPegaw
 function openPegawai(id, bulan) {
   const p = state.pegawai.find(x => x.id === id) || overview.items.find(x => x.id === id);
   if (!p) return toast('Pegawai tidak ditemukan.', 'error');
-  state.selected = { id: p.id, nama: p.nama };
+  state.selected = { id: p.id, nama: p.nama, kategori: catsOf(p) };
   state.bulan = bulan || $('bulanPegawai').value || currentMonth();
   Object.keys(pending).forEach(k => delete pending[k]);
   showView('pegawai');
   refreshStatus();
 }
 
-/* ---------------- Papan status (halaman awal) ---------------- */
+/* ---------------- Papan status ---------------- */
 async function loadOverview(force) {
   const bulan = $('bulanPegawai').value; if (!bulan) return;
   $('boardPeriod').textContent = bulanLabelID(bulan);
@@ -503,14 +574,16 @@ function renderBoard() {
   if (homeFilter === 'belum')   list = list.filter(i => !i.lengkap);
   if (homeQuery) list = list.filter(i => i.nama.toLowerCase().includes(homeQuery));
   if (homeSort === 'nama')   list.sort((a,b) => a.nama.localeCompare(b.nama,'id'));
-  if (homeSort === 'rendah') list.sort((a,b) => a.terupload - b.terupload || a.nama.localeCompare(b.nama,'id'));
-  if (homeSort === 'tinggi') list.sort((a,b) => b.terupload - a.terupload || a.nama.localeCompare(b.nama,'id'));
+  if (homeSort === 'rendah') list.sort((a,b) => (a.terupload/a.total) - (b.terupload/b.total) || a.nama.localeCompare(b.nama,'id'));
+  if (homeSort === 'tinggi') list.sort((a,b) => (b.terupload/b.total) - (a.terupload/a.total) || a.nama.localeCompare(b.nama,'id'));
 
   if (!items.length) { $('boardList').innerHTML = '<div class="px-5 py-10 text-center text-sm text-slate-400">Belum ada pegawai terdaftar.<br>Tambahkan lewat menu <b>Admin</b>.</div>'; return; }
   if (!list.length)  { $('boardList').innerHTML = `<div class="px-5 py-10 text-center text-sm text-slate-400">Tidak ada nama yang cocok${homeQuery ? ` dengan “${esc(homeQuery)}”` : ''} pada filter ini.</div>`; return; }
 
   $('boardList').innerHTML = list.map((it, i) => {
+    const req = catsOf(it);
     const chips = KATEGORI.map(k => {
+      if (!req.includes(k.key)) return `<span class="mini off" title="${k.label}: tidak wajib untuk ${esc(it.nama)}">— ${k.short}</span>`;
       const url = it.files[k.key];
       return url
         ? `<a href="${esc(url)}" target="_blank" rel="noopener" class="mini ok" title="${k.label}: sudah upload — klik untuk buka">✓ ${k.short}</a>`
@@ -518,12 +591,15 @@ function renderBoard() {
     }).join('');
     const badge = it.lengkap
       ? '<span class="rounded-full bg-emerald-600 text-white px-2.5 py-1 text-[11px] font-bold shadow shadow-emerald-600/30">LENGKAP</span>'
-      : `<span class="rounded-full ${it.terupload ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-600'} px-2.5 py-1 text-[11px] font-bold tabular-nums">${it.terupload}/5</span>`;
+      : `<span class="rounded-full ${it.terupload ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-600'} px-2.5 py-1 text-[11px] font-bold tabular-nums">${it.terupload}/${it.total}</span>`;
     return `
     <div class="px-5 py-3.5 flex items-center gap-3 flex-wrap hover:bg-indigo-50/40 transition fade-up ${it.lengkap ? 'bg-emerald-50/40' : ''}" style="animation-delay:${Math.min(i*45,360)}ms">
       <div class="h-9 w-9 shrink-0 rounded-full ${it.lengkap ? 'bg-emerald-100 text-emerald-700' : 'bg-indigo-100 text-indigo-700'} flex items-center justify-center text-sm font-bold">${esc(it.nama.trim().charAt(0).toUpperCase())}</div>
       <div class="min-w-0 flex-1 basis-40">
-        <button data-open="${esc(it.id)}" class="font-semibold text-sm text-slate-800 hover:text-indigo-600 hover:underline text-left truncate max-w-full block">${esc(it.nama)}</button>
+        <div class="flex items-center gap-2 min-w-0">
+          <button data-open="${esc(it.id)}" class="font-semibold text-sm text-slate-800 hover:text-indigo-600 hover:underline text-left truncate">${esc(it.nama)}</button>
+          ${paketBadge(req)}
+        </div>
         <div class="flex gap-1 flex-wrap mt-1">${chips}</div>
       </div>
       <div class="flex items-center gap-2 ml-auto">
@@ -553,6 +629,7 @@ async function refreshStatus() {
   try {
     const res = await api('getStatus', { pegawaiId: state.selected.id, bulan: state.bulan });
     state.status = res.status;
+    state.selected.kategori = res.status.wajib;
     renderPegawaiView();
   } catch (err) {
     toast(err.message, 'error');
@@ -561,9 +638,13 @@ async function refreshStatus() {
 }
 function renderPegawaiView() {
   const s = state.status; if (!s) return;
+  const req = s.wajib;
+  const pk = presetKeyOf(req);
+  $('pPaket').textContent = `Wajib ${req.length} dokumen${pk !== 'custom' ? ' · Paket ' + pk : ' · Khusus'}`;
+  $('pInfoCats').textContent = req.map(k => KATEGORI.find(x => x.key === k).label).join(', ');
   const badge = $('pBadge');
-  if (s.lengkap) { badge.className = 'chip-ok'; badge.textContent = '✅ LENGKAP 5/5'; }
-  else { badge.className = 'chip-no'; badge.textContent = `❌ ${s.terupload}/5`; }
+  if (s.lengkap) { badge.className = 'chip-ok'; badge.textContent = '✅ LENGKAP'; }
+  else { badge.className = 'chip-no'; badge.textContent = `❌ ${s.terupload}/${s.total}`; }
   renderUploadCards();
   renderChecklist();
   updateActionBar();
@@ -581,7 +662,9 @@ function selectFile(key, f) {
   renderPegawaiView();
 }
 function renderUploadCards() {
-  $('uploadCards').innerHTML = KATEGORI.map((k, i) => {
+  const req = state.status.wajib;
+  const cards = KATEGORI.filter(k => req.includes(k.key));
+  $('uploadCards').innerHTML = cards.map((k, i) => {
     const f = state.status.files[k.key];
     const pf = pending[k.key];
     const badge = pf ? '<span class="chip-wait pop">🕓 Siap diupload</span>'
@@ -619,7 +702,7 @@ function renderUploadCards() {
     </div>`;
   }).join('');
 
-  KATEGORI.forEach(k => {
+  cards.forEach(k => {
     const card = document.querySelector(`#uploadCards [data-key="${k.key}"]`);
     const dz = card.querySelector('.dropzone');
     const input = card.querySelector('input[type=file]');
@@ -637,10 +720,11 @@ function renderUploadCards() {
 }
 function renderChecklist() {
   const s = state.status;
-  $('progressText').textContent = `${s.terupload} dari 5 dokumen terupload`;
-  $('progressBar').style.width = (s.terupload / 5 * 100) + '%';
+  const req = s.wajib;
+  $('progressText').textContent = `${s.terupload} dari ${s.total} dokumen wajib terupload`;
+  $('progressBar').style.width = (s.total ? s.terupload / s.total * 100 : 0) + '%';
   $('completeBanner').classList.toggle('hidden', !s.lengkap);
-  $('checklistList').innerHTML = KATEGORI.map(k => {
+  $('checklistList').innerHTML = KATEGORI.filter(k => req.includes(k.key)).map(k => {
     const f = s.files[k.key];
     return `
     <li class="flex items-start gap-3 py-3">
@@ -652,6 +736,9 @@ function renderChecklist() {
       ${f ? `<a href="${esc(f.url)}" target="_blank" rel="noopener" class="text-xs font-semibold text-indigo-600 hover:underline shrink-0 mt-1">Buka ↗</a>` : ''}
     </li>`;
   }).join('');
+  const nonReq = KATEGORI.filter(k => !req.includes(k.key));
+  $('chkNote').classList.toggle('hidden', !nonReq.length);
+  if (nonReq.length) $('chkNote').textContent = 'Tidak diwajibkan untuk Anda: ' + nonReq.map(k => k.label).join(', ') + '.';
 }
 function updateActionBar() {
   const keys = Object.keys(pending);
@@ -718,7 +805,8 @@ $('upScrim').addEventListener('click', () => { if (!uploading) $('uploadModal').
 $('btnUploadAll').addEventListener('click', uploadAll);
 
 async function uploadAll() {
-  const keys = KATEGORI.filter(k => pending[k.key]).map(k => k.key);
+  const req = (state.status && state.status.wajib) || catsOf(state.selected);
+  const keys = KATEGORI.filter(k => req.includes(k.key) && pending[k.key]).map(k => k.key);
   if (!keys.length || uploading) return;
   uploading = true;
   const wasLengkap = state.status && state.status.lengkap;
@@ -735,7 +823,6 @@ async function uploadAll() {
       prepared.push({ kategori: key, fileName: f.name, mimeType: f.type || MIME_MAP[ext], dataBase64: b64, size: f.size });
       setRow(key, 'queued');
     }
-    // Pecah otomatis bila total besar — tetap satu klik dari sisi pengguna
     const batches = []; let cur = [], curSize = 0;
     for (const item of prepared) {
       if (cur.length && curSize + item.size > BATCH_LIMIT) { batches.push(cur); cur = []; curSize = 0; }
@@ -767,7 +854,7 @@ async function uploadAll() {
     $('upFooterText').textContent = `${okCount} berhasil${failCount ? `, ${failCount} gagal — file gagal tetap terpilih, klik Upload Semua untuk mencoba lagi` : ''}.`;
     $('btnCloseUpload').classList.remove('hidden');
     if (okCount) toast(`${okCount} dokumen berhasil diupload${failCount ? `, ${failCount} gagal` : ''}.`, failCount ? 'info' : 'success');
-    if (!wasLengkap && state.status && state.status.lengkap) { confetti(); toast('Semua dokumen bulan ini LENGKAP! 🎉'); }
+    if (!wasLengkap && state.status && state.status.lengkap) { confetti(); toast('Semua dokumen wajib bulan ini LENGKAP! 🎉'); }
     if (!failCount) setTimeout(() => { if (!uploading) $('uploadModal').classList.add('hidden'); }, 2200);
   } catch (err) {
     toast(err.message, 'error');
@@ -833,17 +920,19 @@ function renderMonitor(items) {
   $('aStatBelum').textContent = items.length - lengkap;
   if (!items.length) { $('tbodyMonitor').innerHTML = '<tr><td colspan="7" class="td text-slate-400">Belum ada pegawai. Tambahkan di tab Kelola Pegawai.</td></tr>'; return; }
   $('tbodyMonitor').innerHTML = items.map(it => {
+    const req = catsOf(it);
     const cells = KATEGORI.map(k => {
+      if (!req.includes(k.key)) return '<td class="td"><span class="mini off" title="Tidak wajib untuk pegawai ini">—</span></td>';
       const url = it.files[k.key];
       return `<td class="td">${url
         ? `<a href="${esc(url)}" target="_blank" rel="noopener" class="chip-ok hover:bg-emerald-200" title="Buka file ${k.label}">✅ Buka</a>`
         : '<span class="chip-no">❌</span>'}</td>`;
     }).join('');
     return `<tr class="${it.lengkap ? 'bg-emerald-50/60' : ''} hover:bg-slate-50">
-      <td class="td font-medium text-slate-800">${esc(it.nama)}</td>${cells}
+      <td class="td"><div class="flex items-center gap-2 flex-wrap"><span class="font-medium text-slate-800">${esc(it.nama)}</span>${paketBadge(req)}</div></td>${cells}
       <td class="td">${it.lengkap
         ? '<span class="rounded-full bg-emerald-600 text-white px-2.5 py-1 text-xs font-bold">LENGKAP</span>'
-        : `<span class="rounded-full bg-rose-100 text-rose-600 px-2.5 py-1 text-xs font-bold">BELUM ${it.terupload}/5</span>`}</td>
+        : `<span class="rounded-full bg-rose-100 text-rose-600 px-2.5 py-1 text-xs font-bold">BELUM ${it.terupload}/${it.total}</span>`}</td>
     </tr>`;
   }).join('');
 }
@@ -851,31 +940,38 @@ $('bulanAdmin').addEventListener('change', loadMonitor);
 $('btnRefreshMonitor').addEventListener('click', loadMonitor);
 
 async function loadPegawaiTable() {
-  $('tbodyPegawai').innerHTML = '<tr><td colspan="4" class="td text-slate-400">Memuat…</td></tr>';
+  $('tbodyPegawai').innerHTML = '<tr><td colspan="5" class="td text-slate-400">Memuat…</td></tr>';
   try {
     const res = await api('listPegawai');
     state.pegawai = res.pegawai;
-    $('tbodyPegawai').innerHTML = state.pegawai.length ? state.pegawai.map((p, i) => `
+    $('tbodyPegawai').innerHTML = state.pegawai.length ? state.pegawai.map((p, i) => {
+      const req = catsOf(p);
+      const chips = req.map(key => `<span class="mini req">${KATEGORI.find(x => x.key === key).short}</span>`).join('');
+      return `
       <tr class="hover:bg-slate-50">
         <td class="td text-slate-400">${i + 1}</td>
         <td class="td font-medium text-slate-800">${esc(p.nama)}</td>
+        <td class="td"><div class="flex flex-wrap items-center gap-1">${paketBadge(req)}${chips}</div></td>
         <td class="td"><code class="text-xs bg-slate-100 rounded px-1.5 py-0.5">${esc(p.id)}</code></td>
         <td class="td text-right whitespace-nowrap">
           <button data-act="edit" data-id="${esc(p.id)}" class="btn-ghost !px-2.5 !py-1.5 !text-xs">✏️ Edit</button>
           <button data-act="del" data-id="${esc(p.id)}" class="btn-ghost !px-2.5 !py-1.5 !text-xs !text-rose-600 !border-rose-200 hover:!bg-rose-50">🗑️ Hapus</button>
         </td>
-      </tr>`).join('')
-      : '<tr><td colspan="4" class="td text-slate-400">Belum ada pegawai.</td></tr>';
+      </tr>`;
+    }).join('')
+      : '<tr><td colspan="5" class="td text-slate-400">Belum ada pegawai.</td></tr>';
     $('hintPegawai').textContent = `${state.pegawai.length} pegawai terdaftar — ketik nama untuk mencari.`;
   } catch (err) { toast(err.message, 'error'); }
 }
 $('btnTambah').addEventListener('click', async () => {
   const nama = $('inputNamaBaru').value.trim();
   if (!nama) return toast('Nama pegawai tidak boleh kosong.', 'error');
+  const kategori = getChkGroup('chkBaru');
+  if (!kategori.length) return toast('Centang minimal 1 dokumen wajib.', 'error');
   try {
-    await api('addPegawai', { pin: state.pin, nama });
+    await api('addPegawai', { pin: state.pin, nama, kategori });
     $('inputNamaBaru').value = '';
-    toast(`Pegawai "${nama}" ditambahkan.`);
+    toast(`Pegawai "${nama}" ditambahkan (${kategori.length} dokumen wajib).`);
     overviewDirty = true;
     loadPegawaiTable();
   } catch (err) { adminErr(err); }
@@ -884,7 +980,12 @@ $('tbodyPegawai').addEventListener('click', async e => {
   const btn = e.target.closest('button[data-act]'); if (!btn) return;
   const p = state.pegawai.find(x => x.id === btn.dataset.id); if (!p) return;
   if (btn.dataset.act === 'edit') {
-    editId = p.id; $('inputEditNama').value = p.nama; $('modalEdit').classList.remove('hidden');
+    editId = p.id;
+    const req = catsOf(p);
+    $('inputEditNama').value = p.nama;
+    renderChkGroup('chkEdit', req);
+    $('selPaketEdit').value = presetKeyOf(req);
+    $('modalEdit').classList.remove('hidden');
   } else if (btn.dataset.act === 'del') {
     if (!confirm(`Hapus pegawai "${p.nama}"?\nArsip dokumen di Drive & DataUpload TIDAK ikut terhapus.`)) return;
     try { await api('deletePegawai', { pin: state.pin, id: p.id }); toast('Pegawai dihapus.'); overviewDirty = true; loadPegawaiTable(); }
@@ -894,12 +995,15 @@ $('tbodyPegawai').addEventListener('click', async e => {
 $('btnSimpanEdit').addEventListener('click', async () => {
   const nama = $('inputEditNama').value.trim();
   if (!nama) return toast('Nama tidak boleh kosong.', 'error');
+  const kategori = getChkGroup('chkEdit');
+  if (!kategori.length) return toast('Centang minimal 1 dokumen wajib.', 'error');
   try {
-    await api('updatePegawai', { pin: state.pin, id: editId, nama });
+    await api('updatePegawai', { pin: state.pin, id: editId, nama, kategori });
     $('modalEdit').classList.add('hidden');
-    toast('Nama pegawai diperbarui.');
+    toast('Data pegawai & paket dokumen diperbarui.');
     overviewDirty = true;
     loadPegawaiTable();
+    loadMonitor();
   } catch (err) { adminErr(err); }
 });
 $('btnBatalEdit').addEventListener('click', () => $('modalEdit').classList.add('hidden'));
@@ -911,6 +1015,7 @@ $('modalBackdrop').addEventListener('click', () => $('modalEdit').classList.add(
   $('bulanPegawai').value = cm;
   $('bulanAdmin').value = cm;
   state.bulan = cm;
+  renderChkGroup('chkBaru', PRESETS['5']);
   showView('home');
   loadPegawai();
   loadOverview(true);
