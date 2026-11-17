@@ -1,432 +1,591 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Upload Dokumen Bulanan</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); min-height: 100vh; padding: 20px; color: #333; }
-        .container { max-width: 1000px; margin: 0 auto; }
-        .header { text-align: center; color: white; margin-bottom: 25px; padding: 25px; background: rgba(255,255,255,0.1); border-radius: 15px; backdrop-filter: blur(10px); position: relative; }
-        .header h1 { font-size: 1.8em; margin-bottom: 5px; }
-        .btn-admin { position: absolute; top: 15px; right: 15px; padding: 8px 15px; background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; cursor: pointer; font-size: 13px; }
-        .btn-admin:hover { background: rgba(255,255,255,0.3); }
-        .card { background: rgba(255,255,255,0.97); border-radius: 15px; padding: 25px; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-        .card h2 { color: #1e3c72; margin-bottom: 20px; font-size: 1.3em; border-bottom: 2px solid #e0e0e0; padding-bottom: 10px; }
-        .form-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 20px; }
-        @media (max-width: 768px) { .form-row { grid-template-columns: 1fr; } }
-        .form-group label { display: block; margin-bottom: 5px; color: #555; font-weight: 600; font-size: 14px; }
-        .form-group input, .form-group select { width: 100%; padding: 12px 15px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; }
-        .form-group input:focus, .form-group select:focus { outline: none; border-color: #2a5298; box-shadow: 0 0 0 3px rgba(42, 82, 152, 0.1); }
-        .upload-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px; }
-        .upload-box { padding: 15px; border: 2px dashed #ccc; border-radius: 10px; text-align: center; cursor: pointer; transition: all 0.3s; background: #f8f9fa; }
-        .upload-box:hover { border-color: #2a5298; background: #e3f2fd; }
-        .upload-box.has-file { border-color: #4caf50; background: #e8f5e9; }
-        .upload-box .icon { font-size: 28px; margin-bottom: 8px; }
-        .upload-box .title { font-weight: 600; color: #1e3c72; margin-bottom: 5px; }
-        .upload-box .filename { font-size: 12px; color: #666; word-break: break-all; }
-        .upload-box input[type="file"] { display: none; }
-        .btn-upload { width: 100%; padding: 14px; background: linear-gradient(135deg, #1e3c72, #2a5298); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 20px; transition: all 0.3s; }
-        .btn-upload:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(30, 60, 114, 0.4); }
-        .status-table-wrapper { overflow-x: auto; }
-        .status-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-        .status-table th { background: #1e3c72; color: white; padding: 12px 10px; text-align: center; font-weight: 600; }
-        .status-table th:first-child { text-align: left; }
-        .status-table td { padding: 12px 10px; border-bottom: 1px solid #e0e0e0; text-align: center; }
-        .status-table td:first-child { text-align: left; font-weight: 600; color: #1e3c72; }
-        .status-table tr:hover { background: #f8f9fa; }
-        .badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
-        .badge-done { background: #e8f5e9; color: #2e7d32; }
-        .badge-pending { background: #ffebee; color: #c62828; }
-        .summary-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding: 12px 15px; background: #f0f4ff; border-radius: 10px; flex-wrap: wrap; gap: 10px; }
-        .summary-bar .info { font-weight: 600; color: #1e3c72; }
-        .btn-refresh { padding: 8px 16px; background: #2a5298; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; }
-        .btn-refresh:hover { background: #1e3c72; }
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999; justify-content: center; align-items: center; }
-        .modal.active { display: flex; }
-        .modal-content { background: white; border-radius: 15px; padding: 30px; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto; }
-        .modal-content h3 { color: #1e3c72; margin-bottom: 20px; }
-        .modal-content textarea { width: 100%; height: 200px; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; resize: vertical; font-family: inherit; }
-        .modal-buttons { display: flex; gap: 10px; margin-top: 15px; justify-content: flex-end; }
-        .modal-buttons button { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; }
-        .btn-primary { background: #2a5298; color: white; }
-        .btn-secondary { background: #e0e0e0; color: #333; }
-        .notification { position: fixed; top: 20px; right: 20px; padding: 15px 25px; border-radius: 10px; color: white; font-weight: 600; z-index: 10000; animation: slideIn 0.3s ease; box-shadow: 0 5px 15px rgba(0,0,0,0.3); max-width: 400px; }
-        .notification.success { background: #4caf50; }
-        .notification.error { background: #f44336; }
-        .notification.info { background: #2196f3; }
-        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        .loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9998; justify-content: center; align-items: center; }
-        .loading-overlay.active { display: flex; }
-        .spinner { width: 50px; height: 50px; border: 4px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 1s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .deadline-info { background: #fff3cd; border: 1px solid #ffc107; border-radius: 10px; padding: 12px; margin-bottom: 20px; text-align: center; color: #856404; font-weight: 600; font-size: 14px; }
-        .footer { text-align: center; color: rgba(255,255,255,0.7); padding: 20px; font-size: 13px; }
-        .empty-state { text-align: center; padding: 30px 20px; color: #888; }
-        .month-info { background: #e3f2fd; border-left: 4px solid #2a5298; padding: 10px 15px; border-radius: 8px; margin-bottom: 15px; font-size: 14px; color: #1e3c72; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SIDOKP — Upload Dokumen Bulanan Pegawai</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = { theme: { extend: { fontFamily: { sans: ['Inter','ui-sans-serif','system-ui','sans-serif'] } } } };
+</script>
+<style type="text/tailwindcss">
+  .card        { @apply bg-white rounded-xl border border-slate-200 shadow-sm; }
+  .btn-primary { @apply inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 transition disabled:opacity-40 disabled:cursor-not-allowed; }
+  .btn-ghost   { @apply inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition; }
+  .input       { @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500; }
+  .label       { @apply block text-sm font-medium text-slate-700 mb-1.5; }
+  .chip-ok     { @apply inline-flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-700 px-2.5 py-1 text-xs font-semibold whitespace-nowrap; }
+  .chip-no     { @apply inline-flex items-center gap-1 rounded-full bg-rose-100 text-rose-600 px-2.5 py-1 text-xs font-semibold whitespace-nowrap; }
+  .th          { @apply px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500; }
+  .td          { @apply px-4 py-3 text-sm align-middle; }
+  .nav-btn     { @apply rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 transition; }
+  .nav-active  { @apply bg-indigo-50 text-indigo-700 hover:bg-indigo-50; }
+  .tab-btn     { @apply rounded-lg px-4 py-2 text-sm font-medium text-slate-600 transition; }
+  .tab-active  { @apply bg-white shadow-sm text-indigo-700; }
+</style>
+<style>
+  .fade-in { animation: fadeIn .25s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .toast-in { animation: toastIn .3s ease; }
+  @keyframes toastIn { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: none; } }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+</style>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>📋 Upload Dokumen Bulanan</h1>
-            <p>Absensi • Uang Makan • Tukin • SKAKPT</p>
-            <button class="btn-admin" onclick="openAdminModal()">⚙️ Admin</button>
-        </div>
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col antialiased">
 
-        <div class="deadline-info">⏰ Batas waktu upload: <strong>Tanggal 5 setiap bulan</strong></div>
+<!-- ============ NAVBAR ============ -->
+<nav class="sticky top-0 z-40 bg-white/80 backdrop-blur border-b border-slate-200">
+  <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+    <button id="btnNavHome" class="flex items-center gap-3">
+      <div class="h-9 w-9 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white font-extrabold">S</div>
+      <div class="text-left leading-tight">
+        <p class="font-bold text-slate-800">SIDOKP</p>
+        <p class="text-[11px] text-slate-500 hidden sm:block">Dokumen Bulanan Pegawai</p>
+      </div>
+    </button>
+    <div class="flex items-center gap-1">
+      <button id="btnNavPegawai" class="nav-btn">👤 Pegawai</button>
+      <button id="btnNavAdmin" class="nav-btn">🛡️ Admin</button>
+    </div>
+  </div>
+</nav>
 
-        <div class="card">
-            <h2>📤 Upload Dokumen</h2>
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Nama Pegawai:</label>
-                    <select id="nama"><option value="">-- Pilih Nama --</option></select>
-                </div>
-                <div class="form-group">
-                    <label>Bulan:</label>
-                    <select id="bulanSelect">
-                        <option value="01">Januari</option><option value="02">Februari</option>
-                        <option value="03">Maret</option><option value="04">April</option>
-                        <option value="05">Mei</option><option value="06">Juni</option>
-                        <option value="07">Juli</option><option value="08">Agustus</option>
-                        <option value="09">September</option><option value="10">Oktober</option>
-                        <option value="11">November</option><option value="12">Desember</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Tahun:</label>
-                    <select id="tahunSelect"></select>
-                </div>
-            </div>
-            
-            <label style="display:block; margin-bottom:10px; font-weight:600; color:#555;">Pilih File (Bisa lebih dari 1):</label>
-            <div class="upload-grid">
-                <label class="upload-box" id="box-absensi" for="file-absensi">
-                    <div class="icon">📅</div><div class="title">Absensi</div><div class="filename" id="fn-absensi">Klik pilih file</div>
-                    <input type="file" id="file-absensi" accept=".pdf,.jpg,.jpeg,.png" onchange="updateBox('absensi')" />
-                </label>
-                <label class="upload-box" id="box-uangmakan" for="file-uangmakan">
-                    <div class="icon">🍽️</div><div class="title">Uang Makan</div><div class="filename" id="fn-uangmakan">Klik pilih file</div>
-                    <input type="file" id="file-uangmakan" accept=".pdf,.jpg,.jpeg,.png" onchange="updateBox('uangmakan')" />
-                </label>
-                <label class="upload-box" id="box-tukin" for="file-tukin">
-                    <div class="icon">💰</div><div class="title">Tukin</div><div class="filename" id="fn-tukin">Klik pilih file</div>
-                    <input type="file" id="file-tukin" accept=".pdf,.jpg,.jpeg,.png" onchange="updateBox('tukin')" />
-                </label>
-                <label class="upload-box" id="box-skakpt" for="file-skakpt">
-                    <div class="icon">📄</div><div class="title">SKAKPT</div><div class="filename" id="fn-skakpt">Klik pilih file</div>
-                    <input type="file" id="file-skakpt" accept=".pdf,.jpg,.jpeg,.png" onchange="updateBox('skakpt')" />
-                </label>
-            </div>
-            <button class="btn-upload" onclick="uploadAll()">📤 Upload Dokumen</button>
-        </div>
+<main class="flex-1 w-full max-w-6xl mx-auto px-4 py-8">
 
-        <div class="card">
-            <h2>📊 Status Upload Pegawai</h2>
-            <div class="month-info">📅 Menampilkan status untuk bulan: <strong id="displayMonth">-</strong></div>
-            <div class="summary-bar">
-                <span class="info" id="summary-text">Memuat data...</span>
-                <button class="btn-refresh" onclick="loadStatus()">🔄 Refresh</button>
-            </div>
-            <div class="status-table-wrapper">
-                <table class="status-table">
-                    <thead>
-                        <tr><th>Nama Pegawai</th><th>📅 Absensi</th><th>🍽️ Uang Makan</th><th>💰 Tukin</th><th>📄 SKAKPT</th></tr>
-                    </thead>
-                    <tbody id="status-body"><tr><td colspan="5" class="empty-state">Memuat data...</td></tr></tbody>
-                </table>
-            </div>
+  <!-- ============ VIEW: HOME / PILIH PEGAWAI ============ -->
+  <section id="view-home" class="fade-in">
+    <div class="text-center mb-8">
+      <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900">Upload Dokumen Bulanan Pegawai</h1>
+      <p class="text-slate-500 mt-2 text-sm sm:text-base">Pilih nama dan bulan, lalu lengkapi 5 dokumen wajib. File tersimpan otomatis di Google Drive.</p>
+    </div>
+    <div class="card max-w-xl mx-auto p-6 sm:p-8">
+      <div class="mb-5 relative" id="combobox">
+        <label class="label" for="searchPegawai">Nama Pegawai</label>
+        <input id="searchPegawai" type="text" class="input" placeholder="Ketik untuk mencari nama pegawai…" autocomplete="off">
+        <ul id="dropdownPegawai" class="hidden absolute left-0 right-0 mt-1 max-h-56 overflow-auto card py-1 z-20 divide-y divide-slate-50"></ul>
+        <p id="hintPegawai" class="text-xs text-slate-400 mt-1.5">Memuat daftar pegawai…</p>
+      </div>
+      <div class="mb-6">
+        <label class="label" for="bulanPegawai">Bulan Dokumen</label>
+        <input id="bulanPegawai" type="month" class="input">
+      </div>
+      <button id="btnMasuk" class="btn-primary w-full">Buka Dashboard Pegawai →</button>
+    </div>
+  </section>
+
+  <!-- ============ VIEW: DASHBOARD PEGAWAI ============ -->
+  <section id="view-pegawai" class="hidden fade-in">
+    <div class="card p-5 mb-6 flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
+      <div class="flex items-center gap-4">
+        <div id="pAvatar" class="h-12 w-12 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-lg">?</div>
+        <div>
+          <h2 id="pNama" class="font-bold text-lg text-slate-900">—</h2>
+          <p class="text-sm text-slate-500">Periode: <span id="pBulan" class="font-medium text-slate-700">—</span></p>
         </div>
-        <div class="footer"><p>© 2024 - Sistem Upload Dokumen | File tersimpan di Google Drive</p></div>
+      </div>
+      <div class="flex items-center gap-2">
+        <span id="pBadge" class="chip-no">0/5</span>
+        <button id="btnRefreshPegawai" class="btn-ghost" title="Muat ulang status">🔄</button>
+        <button id="btnGanti" class="btn-ghost">← Ganti Pegawai</button>
+      </div>
     </div>
 
-    <div class="modal" id="modalLogin">
-        <div class="modal-content">
-            <h3>🔐 Login Admin</h3>
-            <div class="form-group"><label>Password:</label><input type="password" id="adminPassword" placeholder="Masukkan password..." /></div>
-            <div class="modal-buttons">
-                <button class="btn-secondary" onclick="closeModal('modalLogin')">Batal</button>
-                <button class="btn-primary" onclick="loginAdmin()">Login</button>
-            </div>
+    <div class="grid lg:grid-cols-3 gap-6 items-start">
+      <!-- Kolom kiri: 5 form upload -->
+      <div id="uploadCards" class="lg:col-span-2 space-y-4"></div>
+
+      <!-- Kolom kanan: checklist -->
+      <div class="card p-5 lg:sticky lg:top-24">
+        <h3 class="font-bold text-slate-900 mb-1">✅ Status Dokumen</h3>
+        <p id="progressText" class="text-xs text-slate-500 mb-3">0 dari 5 dokumen terupload</p>
+        <div class="h-2 rounded-full bg-slate-100 overflow-hidden mb-2">
+          <div id="progressBar" class="h-full bg-emerald-500 rounded-full transition-all duration-500" style="width:0%"></div>
         </div>
+        <ul id="checklistList" class="divide-y divide-slate-100"></ul>
+        <p class="text-[11px] text-slate-400 mt-3">Format: PDF / Excel / JPG / PNG · maks 10 MB per file. Upload ulang akan menggantikan file lama.</p>
+      </div>
     </div>
-    <div class="modal" id="modalAdmin">
-        <div class="modal-content">
-            <h3>⚙️ Panel Admin</h3>
-            <div class="form-group"><label>Daftar Nama Pegawai (satu per baris):</label><textarea id="peopleList" placeholder="Ahmad&#10;Budi&#10;Citra"></textarea></div>
-            <div class="form-group"><label>Ganti Password Admin:</label><input type="password" id="newPassword" placeholder="Kosongkan jika tidak diganti" /></div>
-            <div class="modal-buttons">
-                <button class="btn-secondary" onclick="logoutAdmin()">Logout</button>
-                <button class="btn-primary" onclick="saveAdminSettings()">💾 Simpan</button>
-            </div>
-        </div>
+  </section>
+
+  <!-- ============ VIEW: ADMIN LOGIN ============ -->
+  <section id="view-admin-login" class="hidden fade-in">
+    <div class="card max-w-sm mx-auto p-8 text-center mt-8">
+      <div class="h-14 w-14 mx-auto rounded-2xl bg-indigo-50 flex items-center justify-center text-3xl mb-4">🛡️</div>
+      <h2 class="font-bold text-xl text-slate-900">Login Admin</h2>
+      <p class="text-sm text-slate-500 mt-1 mb-6">Masukkan PIN administrator untuk mengelola pegawai & monitoring.</p>
+      <input id="inputPin" type="password" inputmode="numeric" class="input text-center tracking-widest mb-4" placeholder="••••••">
+      <button id="btnLogin" class="btn-primary w-full">Masuk</button>
+    </div>
+  </section>
+
+  <!-- ============ VIEW: ADMIN DASHBOARD ============ -->
+  <section id="view-admin" class="hidden fade-in">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+      <div>
+        <h2 class="text-xl font-extrabold text-slate-900">Dashboard Admin</h2>
+        <p class="text-sm text-slate-500">Monitoring upload & manajemen pegawai</p>
+      </div>
+      <button id="btnLogout" class="btn-ghost">🚪 Logout</button>
     </div>
 
-    <div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div></div>
+    <div class="inline-flex bg-slate-200/70 rounded-xl p-1 gap-1 mb-6">
+      <button id="tabMonitor" class="tab-btn tab-active">📊 Monitoring Bulanan</button>
+      <button id="tabPegawai" class="tab-btn">👥 Kelola Pegawai</button>
+    </div>
 
-    <script>
-        // URL API DI-HARDCODE DI SINI AGAR PERMANEN UNTUK SEMUA PENGGUNA
-        const API_URL = 'https://script.google.com/macros/s/AKfycbziSKDNjp7MEprsHjvlxagDCIpfJG2L45KIM5M3pC93-LVNniMzKY58wRhnAO0nyRE/exec';
-        
-        // DAFTAR NAMA PEGAWAI PERMANEN UNTUK SEMUA PENGGUNA
-let peopleList = [
-    "ANSYARIATUL AQIDAH",
-    "DARMAWATI",
-    "DEWI GUSTIANA",
-    "FITRIAH",
-    "KARTIKA SARI",
-    "MASWANDI",
-    "NORBAYAH",
-    "RAUDAH ABSHARI",
-    "RETNASARI",
-    "RINA PURNAMI",
-    "RUSINAWATI",
-    "SRI HERNIWATI",
-    "ZAINORRAHMAN",
-    "AHMAD JAINI",
-    "H. ARIF RAHMAN",
-    "HAIRUN NAZMI",
-    "MUHAIMIN",
-    "MUHAMMAD NOOR",
-    "NOOR LAILA",
-    "RAHMAWATI",
-    "SALAMIAH",
-    "SITI OLFAH",
-    "LULU ARIFAH RAHMAH",
-    "RIKA MASRIANI",
-    "SYAHRUNI",
-    "BAHRIANI",
-    "FITRIYAH",
-    "AGUST TOMMY",
-    "ARIF IKHWANI",
-    "AULIA RAHMAN",
-    "WINDA ANGGIAZIDA",
-    "ROSNAH",
-    "SUMIATI"
+    <!-- Panel Monitoring -->
+    <div id="panelMonitor">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <div class="card p-5"><p class="text-xs font-semibold text-slate-500 uppercase">Total Pegawai</p><p id="statTotal" class="text-3xl font-extrabold text-slate-900 mt-1">0</p></div>
+        <div class="card p-5 border-l-4 border-l-emerald-500"><p class="text-xs font-semibold text-slate-500 uppercase">Lengkap (5/5)</p><p id="statLengkap" class="text-3xl font-extrabold text-emerald-600 mt-1">0</p></div>
+        <div class="card p-5 border-l-4 border-l-rose-500"><p class="text-xs font-semibold text-slate-500 uppercase">Belum Lengkap</p><p id="statBelum" class="text-3xl font-extrabold text-rose-600 mt-1">0</p></div>
+      </div>
+      <div class="card overflow-hidden">
+        <div class="p-4 border-b border-slate-100 flex flex-wrap items-center gap-3 justify-between">
+          <div class="flex items-center gap-2">
+            <label class="text-sm font-medium text-slate-600" for="bulanAdmin">Periode:</label>
+            <input id="bulanAdmin" type="month" class="input !w-auto !py-2">
+            <button id="btnRefreshMonitor" class="btn-ghost" title="Muat ulang">🔄</button>
+          </div>
+          <p class="text-xs text-slate-400">✅ = file terupload (klik untuk buka) · ❌ = belum</p>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full min-w-[780px]">
+            <thead class="bg-slate-50 border-b border-slate-100">
+              <tr>
+                <th class="th">Pegawai</th><th class="th">Kehadiran</th><th class="th">Uang Makan</th>
+                <th class="th">Tukin</th><th class="th">SKAPT</th><th class="th">Selisih Tukin</th><th class="th">Status</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyMonitor" class="divide-y divide-slate-100"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel Kelola Pegawai -->
+    <div id="panelPegawai" class="hidden">
+      <div class="card p-5 mb-4">
+        <label class="label" for="inputNamaBaru">Tambah Pegawai Baru</label>
+        <div class="flex flex-col sm:flex-row gap-2">
+          <input id="inputNamaBaru" type="text" class="input flex-1" placeholder="Contoh: Budi Santoso, S.Kom">
+          <button id="btnTambah" class="btn-primary">＋ Tambah</button>
+        </div>
+      </div>
+      <div class="card overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full min-w-[520px]">
+            <thead class="bg-slate-50 border-b border-slate-100">
+              <tr><th class="th w-12">No</th><th class="th">Nama Pegawai</th><th class="th">ID</th><th class="th text-right">Aksi</th></tr>
+            </thead>
+            <tbody id="tbodyPegawai" class="divide-y divide-slate-100"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="border-t border-slate-200 bg-white py-4">
+  <p class="text-center text-xs text-slate-400">© 2026 SIDOKP · Terhubung ke Google Drive & Google Sheets via Apps Script</p>
+</footer>
+
+<!-- ============ MODAL EDIT PEGAWAI ============ -->
+<div id="modalEdit" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div id="modalBackdrop" class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"></div>
+  <div class="card relative w-full max-w-md p-6 fade-in">
+    <h3 class="font-bold text-lg text-slate-900 mb-4">✏️ Edit Nama Pegawai</h3>
+    <input id="inputEditNama" type="text" class="input mb-4">
+    <div class="flex justify-end gap-2">
+      <button id="btnBatalEdit" class="btn-ghost">Batal</button>
+      <button id="btnSimpanEdit" class="btn-primary">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ TOAST & OVERLAY ============ -->
+<div id="toasts" class="fixed bottom-4 right-4 z-[60] flex flex-col gap-2 items-end max-w-[92vw]"></div>
+<div id="overlay" class="hidden fixed inset-0 z-[70] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center">
+  <div class="card p-6 flex flex-col items-center gap-3 mx-4">
+    <div class="h-10 w-10 rounded-full border-4 border-indigo-200 border-t-indigo-600 animate-spin"></div>
+    <p id="overlayText" class="text-sm font-medium text-slate-700">Memproses…</p>
+  </div>
+</div>
+
+<script>
+/* ================================================================
+   ⚠️⚠️ KONFIGURASI — GANTI DENGAN URL WEB APP APPS SCRIPT ANDA ⚠️⚠️
+   ================================================================ */
+const API_URL = 'GANTI_DENGAN_URL_WEB_APP_ANDA'; // contoh: https://script.google.com/macros/s/AKfycb.../exec
+
+const KATEGORI = [
+  { key:'Kehadiran',    label:'Kehadiran',     icon:'📋', desc:'Rekap daftar hadir bulanan' },
+  { key:'UangMakan',    label:'Uang Makan',    icon:'🍽️', desc:'Rekap pembayaran uang makan' },
+  { key:'Tukin',        label:'Tukin',         icon:'💰', desc:'Dokumen tunjangan kinerja' },
+  { key:'SKAPT',        label:'SKAPT',         icon:'📄', desc:'Dokumen SKAPT' },
+  { key:'SelisihTukin', label:'Selisih Tukin', icon:'🧾', desc:'Dokumen selisih tunjangan kinerja' },
 ];
-        let uploadData = {};
-        let isAdminLoggedIn = sessionStorage.getItem('isAdmin') === 'true';
-        const ADMIN_PASSWORD = localStorage.getItem('adminPassword') || 'admin123';
+const MAX_FILE   = 10 * 1024 * 1024; // 10 MB
+const ALLOWED_EXT = ['pdf','xls','xlsx','png','jpg','jpeg','webp'];
+const MIME_MAP = { pdf:'application/pdf', xls:'application/vnd.ms-excel',
+  xlsx:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  png:'image/png', jpg:'image/jpeg', jpeg:'image/jpeg', webp:'image/webp' };
+const BULAN_ID = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
 
-        const monthNames = {
-            '01': 'Januari', '02': 'Februari', '03': 'Maret', '04': 'April',
-            '05': 'Mei', '06': 'Juni', '07': 'Juli', '08': 'Agustus',
-            '09': 'September', '10': 'Oktober', '11': 'November', '12': 'Desember'
-        };
+const state = {
+  pegawai: [], selected: null, bulan: currentMonth(), status: null,
+  pin: sessionStorage.getItem('sidokp_pin') || '', adminTab: 'monitor'
+};
+const pending = {}; // file terpilih per kategori, belum diupload
+let editId = null;
 
-        document.addEventListener('DOMContentLoaded', function() {
-            const now = new Date();
-            const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-            const prevMonthNum = String(prevMonth.getMonth() + 1).padStart(2, '0');
-            const prevYear = prevMonth.getFullYear();
-            
-            document.getElementById('bulanSelect').value = prevMonthNum;
-            
-            const tahunSelect = document.getElementById('tahunSelect');
-            for (let year = 2020; year <= 2030; year++) {
-                const opt = document.createElement('option');
-                opt.value = year; opt.textContent = year;
-                if (year === prevYear) opt.selected = true;
-                tahunSelect.appendChild(opt);
-            }
-            
-            populateNameDropdown();
-            loadStatus();
-        });
+/* ---------------- Helper ---------------- */
+const $ = id => document.getElementById(id);
+function esc(s){ return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function currentMonth(){ const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0'); }
+function bulanLabelID(b){ const [y,m] = b.split('-'); return BULAN_ID[parseInt(m,10)-1] + ' ' + y; }
+function fmtSize(b){ return b > 1048576 ? (b/1048576).toFixed(1)+' MB' : Math.ceil(b/1024)+' KB'; }
 
-        function getSelectedMonth() {
-            return document.getElementById('tahunSelect').value + '-' + document.getElementById('bulanSelect').value;
-        }
+const SVG_CHECK = '<svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>';
+const SVG_X = '<svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>';
 
-        function populateNameDropdown() {
-            const select = document.getElementById('nama');
-            select.innerHTML = '<option value="">-- Pilih Nama --</option>';
-            peopleList.forEach(name => {
-                const opt = document.createElement('option');
-                opt.value = name; opt.textContent = name;
-                select.appendChild(opt);
-            });
-        }
+/* ---------------- API ----------------
+   PENTING: JANGAN set header "Content-Type: application/json"!
+   Body dikirim sebagai text/plain (simple request) agar tidak
+   memicu preflight CORS yang tidak didukung Google Apps Script. */
+async function api(action, payload = {}) {
+  if (!API_URL || API_URL.includes('GANTI_')) throw new Error('API_URL belum diisi. Edit index.html bagian KONFIGURASI.');
+  const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action, ...payload }) });
+  if (!res.ok) throw new Error('HTTP ' + res.status + ' — periksa deployment Web App.');
+  const data = await res.json();
+  if (!data.success) throw new Error(data.message || 'Terjadi kesalahan di server.');
+  return data;
+}
 
-        function openAdminModal() {
-            if (isAdminLoggedIn) {
-                document.getElementById('peopleList').value = peopleList.join('\n');
-                document.getElementById('modalAdmin').classList.add('active');
-            } else {
-                document.getElementById('modalLogin').classList.add('active');
-            }
-        }
-        function loginAdmin() {
-            if (document.getElementById('adminPassword').value === ADMIN_PASSWORD) {
-                isAdminLoggedIn = true;
-                sessionStorage.setItem('isAdmin', 'true');
-                closeModal('modalLogin');
-                document.getElementById('peopleList').value = peopleList.join('\n');
-                document.getElementById('modalAdmin').classList.add('active');
-                showNotification('Login berhasil!', 'success');
-            } else {
-                showNotification('Password salah!', 'error');
-            }
-            document.getElementById('adminPassword').value = '';
-        }
-        function logoutAdmin() {
-            isAdminLoggedIn = false;
-            sessionStorage.removeItem('isAdmin');
-            closeModal('modalAdmin');
-        }
-        function saveAdminSettings() {
-            const text = document.getElementById('peopleList').value.trim();
-            peopleList = text.split('\n').map(n => n.trim()).filter(n => n.length > 0);
-            localStorage.setItem('peopleList', JSON.stringify(peopleList));
-            const newPwd = document.getElementById('newPassword').value.trim();
-            if (newPwd) localStorage.setItem('adminPassword', newPwd);
-            populateNameDropdown();
-            loadStatus();
-            closeModal('modalAdmin');
-            document.getElementById('newPassword').value = '';
-            showNotification('Data admin disimpan! (' + peopleList.length + ' pegawai)', 'success');
-        }
-        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+/* ---------------- UI: Toast, Overlay, Views ---------------- */
+function toast(msg, type = 'success') {
+  const colors = { success:'bg-emerald-600', error:'bg-rose-600', info:'bg-slate-800' };
+  const icons  = { success:'✅', error:'⚠️', info:'ℹ️' };
+  const el = document.createElement('div');
+  el.className = `toast-in ${colors[type]} text-white text-sm font-medium px-4 py-3 rounded-xl shadow-lg flex items-center gap-2`;
+  el.innerHTML = `<span>${icons[type]}</span><span>${esc(msg)}</span>`;
+  $('toasts').appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity .3s'; setTimeout(() => el.remove(), 300); }, 4200);
+}
+function overlay(show, text = 'Memproses…') { $('overlayText').textContent = text; $('overlay').classList.toggle('hidden', !show); }
 
-        function updateBox(cat) {
-            const file = document.getElementById('file-' + cat).files[0];
-            const fn = document.getElementById('fn-' + cat);
-            const box = document.getElementById('box-' + cat);
-            if (file) {
-                fn.textContent = file.name.length > 25 ? file.name.substring(0, 25) + '...' : file.name;
-                box.classList.add('has-file');
-            } else {
-                fn.textContent = 'Klik pilih file';
-                box.classList.remove('has-file');
-            }
-        }
+const VIEWS = ['home','pegawai','admin-login','admin'];
+function showView(name) {
+  VIEWS.forEach(v => $('view-' + v).classList.toggle('hidden', v !== name));
+  $('btnNavPegawai').classList.toggle('nav-active', name === 'home' || name === 'pegawai');
+  $('btnNavAdmin').classList.toggle('nav-active', name === 'admin-login' || name === 'admin');
+  window.scrollTo({ top: 0 });
+}
 
-        async function uploadAll() {
-            const nama = document.getElementById('nama').value;
-            const bulan = getSelectedMonth();
-            
-            if (!nama) return showNotification('Pilih nama pegawai!', 'error');
+/* ---------------- Home: combobox pegawai ---------------- */
+async function loadPegawai() {
+  try {
+    const res = await api('listPegawai');
+    state.pegawai = res.pegawai;
+    $('hintPegawai').textContent = state.pegawai.length
+      ? `${state.pegawai.length} pegawai terdaftar — ketik nama untuk mencari.`
+      : 'Belum ada pegawai. Tambahkan dulu lewat menu Admin.';
+  } catch (err) {
+    $('hintPegawai').textContent = 'Gagal memuat pegawai.';
+    toast(err.message, 'error');
+  }
+}
+function renderDropdown(q) {
+  const dd = $('dropdownPegawai');
+  const f = state.pegawai.filter(p => p.nama.toLowerCase().includes((q || '').toLowerCase()));
+  dd.innerHTML = f.length
+    ? f.map(p => `<li><button type="button" data-id="${esc(p.id)}" class="w-full text-left px-3 py-2.5 text-sm hover:bg-indigo-50 hover:text-indigo-700">${esc(p.nama)}</button></li>`).join('')
+    : '<li class="px-3 py-2.5 text-sm text-slate-400">Tidak ada hasil</li>';
+  dd.classList.remove('hidden');
+}
+$('searchPegawai').addEventListener('focus', e => renderDropdown(e.target.value));
+$('searchPegawai').addEventListener('input', e => { state.selected = null; renderDropdown(e.target.value); });
+$('dropdownPegawai').addEventListener('click', e => {
+  const btn = e.target.closest('button[data-id]'); if (!btn) return;
+  const p = state.pegawai.find(x => x.id === btn.dataset.id); if (!p) return;
+  state.selected = p; $('searchPegawai').value = p.nama; $('dropdownPegawai').classList.add('hidden');
+});
+document.addEventListener('click', e => { if (!e.target.closest('#combobox')) $('dropdownPegawai').classList.add('hidden'); });
 
-            const categories = ['absensi', 'uangmakan', 'tukin', 'skakpt'];
-            const filesToUpload = [];
-            for (const cat of categories) {
-                const file = document.getElementById('file-' + cat).files[0];
-                if (file) filesToUpload.push({ category: cat, file: file });
-            }
+$('btnMasuk').addEventListener('click', async () => {
+  if (!state.selected) return toast('Pilih nama pegawai dari daftar terlebih dahulu.', 'error');
+  const bulan = $('bulanPegawai').value;
+  if (!bulan) return toast('Pilih bulan dokumen.', 'error');
+  state.bulan = bulan;
+  showView('pegawai');
+  await refreshStatus();
+});
 
-            if (filesToUpload.length === 0) return showNotification('Pilih minimal 1 file!', 'error');
+/* ---------------- Dashboard Pegawai ---------------- */
+async function refreshStatus() {
+  $('pNama').textContent = state.selected.nama;
+  $('pBulan').textContent = bulanLabelID(state.bulan);
+  $('pAvatar').textContent = state.selected.nama.trim().charAt(0).toUpperCase();
+  $('checklistList').innerHTML = '<li class="py-4 text-sm text-slate-400">Memuat status…</li>';
+  $('uploadCards').innerHTML = '<div class="card p-6 text-sm text-slate-400">Memuat…</div>';
+  try {
+    const res = await api('getStatus', { pegawaiId: state.selected.id, bulan: state.bulan });
+    state.status = res.status;
+    renderPegawaiView();
+  } catch (err) {
+    toast(err.message, 'error');
+    $('uploadCards').innerHTML = '<div class="card p-6 text-sm text-rose-500">Gagal memuat data. Klik 🔄 untuk coba lagi.</div>';
+  }
+}
 
-            showLoading(true);
-            let successCount = 0, failCount = 0;
+function renderPegawaiView() {
+  const s = state.status;
+  const badge = $('pBadge');
+  if (s.lengkap) { badge.className = 'chip-ok'; badge.textContent = '✅ LENGKAP 5/5'; }
+  else { badge.className = 'chip-no'; badge.textContent = `❌ ${s.terupload}/5`; }
+  renderUploadCards();
+  renderChecklist();
+}
 
-            for (const item of filesToUpload) {
-                try {
-                    if (item.file.size > 10 * 1024 * 1024) {
-                        showNotification(`File ${item.category} > 10MB`, 'error');
-                        failCount++; continue;
-                    }
-                    const base64 = await fileToBase64(item.file);
-                    const payload = JSON.stringify({
-                        file: base64, filename: item.file.name, mimeType: item.file.type,
-                        category: item.category, nama: nama, bulan: bulan
-                    });
+function renderUploadCards() {
+  $('uploadCards').innerHTML = KATEGORI.map((k, i) => {
+    const f = state.status.files[k.key];
+    const badge = f ? '<span class="chip-ok">✅ Terupload</span>' : '<span class="chip-no">❌ Belum</span>';
+    const current = f ? `
+      <div class="mt-3 rounded-lg bg-emerald-50 border border-emerald-100 px-3 py-2 text-xs flex items-center justify-between gap-2">
+        <span class="text-emerald-800 truncate">📎 ${esc(f.name)}</span>
+        <a href="${esc(f.url)}" target="_blank" rel="noopener" class="font-semibold text-indigo-600 hover:underline shrink-0">Lihat</a>
+      </div>` : '';
+    return `
+    <div class="card p-5" data-key="${k.key}">
+      <div class="flex items-start justify-between gap-3">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="h-10 w-10 shrink-0 rounded-lg bg-indigo-50 flex items-center justify-center text-xl">${k.icon}</div>
+          <div class="min-w-0">
+            <h3 class="font-semibold text-slate-800">${i + 1}. ${k.label}</h3>
+            <p class="text-xs text-slate-500 truncate">${k.desc} · maks 10 MB</p>
+          </div>
+        </div>
+        ${badge}
+      </div>
+      <div class="mt-4 flex flex-col sm:flex-row gap-2">
+        <label class="btn-ghost flex-1 cursor-pointer !justify-start min-w-0">
+          <span>📁</span><span class="file-label truncate text-slate-500">Pilih file (PDF/Excel/Gambar)…</span>
+          <input type="file" class="hidden" accept=".pdf,.xls,.xlsx,.png,.jpg,.jpeg,.webp">
+        </label>
+        <button class="btn-primary btn-upload sm:w-32" disabled>⬆️ Upload</button>
+      </div>
+      ${current}
+    </div>`;
+  }).join('');
 
-                    const response = await fetch(API_URL, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                        body: payload
-                    });
-                    const result = await response.json();
-                    if (result.success) successCount++; else failCount++;
-                } catch (error) { failCount++; console.error(error); }
-            }
+  KATEGORI.forEach(k => {
+    const card = document.querySelector(`#uploadCards [data-key="${k.key}"]`);
+    const input = card.querySelector('input[type=file]');
+    const lbl = card.querySelector('.file-label');
+    const btn = card.querySelector('.btn-upload');
+    input.addEventListener('change', () => {
+      const f = input.files[0]; if (!f) return;
+      const ext = f.name.split('.').pop().toLowerCase();
+      if (!ALLOWED_EXT.includes(ext)) { toast('Format tidak didukung. Gunakan PDF/Excel/JPG/PNG.', 'error'); input.value = ''; return; }
+      if (f.size > MAX_FILE) { toast(`File ${fmtSize(f.size)} — melebihi batas 10 MB.`, 'error'); input.value = ''; return; }
+      pending[k.key] = f;
+      lbl.textContent = `${f.name} (${fmtSize(f.size)})`;
+      lbl.classList.remove('text-slate-500');
+      btn.disabled = false;
+    });
+    btn.addEventListener('click', () => doUpload(k));
+  });
+}
 
-            showLoading(false);
-            if (successCount > 0) {
-                showNotification(`✅ ${successCount} file berhasil diupload!`, 'success');
-                categories.forEach(cat => {
-                    document.getElementById('file-' + cat).value = '';
-                    updateBox(cat);
-                });
-                setTimeout(() => loadStatus(), 2000);
-            }
-            if (failCount > 0) showNotification(`❌ ${failCount} file gagal`, 'error');
-        }
+async function doUpload(k) {
+  const f = pending[k.key];
+  if (!f) return toast('Pilih file terlebih dahulu.', 'error');
+  overlay(true, `Mengunggah ${k.label}…`);
+  try {
+    const base64 = await new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => res(String(r.result).split(',')[1]);
+      r.onerror = () => rej(new Error('Gagal membaca file.'));
+      r.readAsDataURL(f);
+    });
+    const ext = f.name.split('.').pop().toLowerCase();
+    const res = await api('upload', {
+      pegawaiId: state.selected.id, bulan: state.bulan, kategori: k.key,
+      fileName: f.name, mimeType: f.type || MIME_MAP[ext], dataBase64: base64
+    });
+    state.status = res.status;
+    delete pending[k.key];
+    toast(`${k.label} berhasil diupload!`);
+    renderPegawaiView();
+  } catch (err) {
+    toast(err.message, 'error');
+  } finally {
+    overlay(false);
+  }
+}
 
-        function fileToBase64(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result.split(',')[1]);
-                reader.onerror = reject;
-                reader.readAsDataURL(file);
-            });
-        }
+function renderChecklist() {
+  const s = state.status;
+  $('progressText').textContent = `${s.terupload} dari 5 dokumen terupload`;
+  $('progressBar').style.width = (s.terupload / 5 * 100) + '%';
+  $('checklistList').innerHTML = KATEGORI.map(k => {
+    const f = s.files[k.key];
+    return `
+    <li class="flex items-start gap-3 py-3">
+      <span class="${f ? 'text-emerald-500' : 'text-rose-400'} shrink-0 mt-0.5">${f ? SVG_CHECK : SVG_X}</span>
+      <div class="min-w-0 flex-1">
+        <p class="text-sm font-medium text-slate-800">${k.label}</p>
+        <p class="text-xs ${f ? 'text-slate-500' : 'text-rose-400'} truncate">${f ? esc(f.name) : 'Belum ada file'}</p>
+      </div>
+      ${f ? `<a href="${esc(f.url)}" target="_blank" rel="noopener" class="text-xs font-semibold text-indigo-600 hover:underline shrink-0 mt-1">Buka ↗</a>` : ''}
+    </li>`;
+  }).join('');
+}
 
-        async function loadStatus() {
-            const bulan = getSelectedMonth();
-            const bulanNum = bulan.split('-')[1];
-            const tahun = bulan.split('-')[0];
-            document.getElementById('displayMonth').textContent = monthNames[bulanNum] + ' ' + tahun;
-            
-            document.getElementById('summary-text').textContent = 'Memuat data...';
-            
-            try {
-                const response = await fetch(API_URL + '?action=getStatus&bulan=' + encodeURIComponent(bulan));
-                const result = await response.json();
-                if (result.success) {
-                    uploadData = result.data || {};
-                    renderStatus();
-                }
-            } catch (error) {
-                document.getElementById('summary-text').textContent = 'Gagal memuat data';
-            }
-        }
+$('btnGanti').addEventListener('click', () => showView('home'));
+$('btnRefreshPegawai').addEventListener('click', refreshStatus);
 
-        function renderStatus() {
-            const tbody = document.getElementById('status-body');
-            const categories = ['absensi', 'uangmakan', 'tukin', 'skakpt'];
-            
-            if (peopleList.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Belum ada daftar pegawai. Klik "Admin" untuk menambahkan.</td></tr>';
-                document.getElementById('summary-text').textContent = '0 pegawai terdaftar';
-                return;
-            }
+/* ---------------- Admin ---------------- */
+function adminErr(err) {
+  if (/pin/i.test(err.message)) {
+    state.pin = ''; sessionStorage.removeItem('sidokp_pin');
+    showView('admin-login');
+    toast('PIN salah / sesi berakhir. Silakan login ulang.', 'error');
+  } else toast(err.message, 'error');
+}
+function openAdmin() { showView('admin'); if (!$('bulanAdmin').value) $('bulanAdmin').value = state.bulan; loadMonitor(); loadPegawaiTable(); }
 
-            tbody.innerHTML = '';
-            let totalUploaded = 0, totalSlots = peopleList.length * 4;
+$('btnNavAdmin').addEventListener('click', () => state.pin ? openAdmin() : showView('admin-login'));
+$('btnNavPegawai').addEventListener('click', () => showView('home'));
+$('btnNavHome').addEventListener('click', () => showView('home'));
 
-            peopleList.forEach(name => {
-                const tr = document.createElement('tr');
-                let rowHtml = `<td>${name}</td>`;
-                categories.forEach(cat => {
-                    const data = (uploadData[cat] || {})[name];
-                    const isUp = data && data.uploaded;
-                    if (isUp) totalUploaded++;
-                    rowHtml += `<td><span class="badge ${isUp ? 'badge-done' : 'badge-pending'}">${isUp ? '✓ ' + data.time : '✗ Belum'}</span></td>`;
-                });
-                tr.innerHTML = rowHtml;
-                tbody.appendChild(tr);
-            });
+async function doLogin() {
+  const pin = $('inputPin').value.trim();
+  if (!pin) return toast('Masukkan PIN admin.', 'error');
+  try {
+    await api('adminLogin', { pin });
+    state.pin = pin; sessionStorage.setItem('sidokp_pin', pin);
+    $('inputPin').value = '';
+    toast('Selamat datang, Admin!');
+    openAdmin();
+  } catch (err) { toast(err.message, 'error'); }
+}
+$('btnLogin').addEventListener('click', doLogin);
+$('inputPin').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+$('btnLogout').addEventListener('click', () => { state.pin = ''; sessionStorage.removeItem('sidokp_pin'); showView('home'); toast('Anda telah logout.', 'info'); });
 
-            const pct = Math.round((totalUploaded / totalSlots) * 100);
-            document.getElementById('summary-text').textContent = `${totalUploaded}/${totalSlots} terupload (${pct}%)`;
-        }
+function switchTab(tab) {
+  state.adminTab = tab;
+  $('tabMonitor').classList.toggle('tab-active', tab === 'monitor');
+  $('tabPegawai').classList.toggle('tab-active', tab === 'pegawai');
+  $('panelMonitor').classList.toggle('hidden', tab !== 'monitor');
+  $('panelPegawai').classList.toggle('hidden', tab !== 'pegawai');
+}
+$('tabMonitor').addEventListener('click', () => switchTab('monitor'));
+$('tabPegawai').addEventListener('click', () => switchTab('pegawai'));
 
-        function showNotification(msg, type) {
-            const n = document.createElement('div');
-            n.className = 'notification ' + type;
-            n.textContent = msg;
-            document.body.appendChild(n);
-            setTimeout(() => n.remove(), 4000);
-        }
-        function showLoading(show) {
-            document.getElementById('loadingOverlay').classList.toggle('active', show);
-        }
-        
-        document.getElementById('bulanSelect').addEventListener('change', loadStatus);
-        document.getElementById('tahunSelect').addEventListener('change', loadStatus);
-    </script>
+/* Monitoring */
+async function loadMonitor() {
+  const bulan = $('bulanAdmin').value; if (!bulan) return;
+  $('tbodyMonitor').innerHTML = '<tr><td colspan="7" class="td text-slate-400">Memuat data…</td></tr>';
+  try {
+    const res = await api('monitor', { pin: state.pin, bulan });
+    renderMonitor(res.items);
+  } catch (err) { adminErr(err); }
+}
+function renderMonitor(items) {
+  const lengkap = items.filter(i => i.lengkap).length;
+  $('statTotal').textContent = items.length;
+  $('statLengkap').textContent = lengkap;
+  $('statBelum').textContent = items.length - lengkap;
+  if (!items.length) { $('tbodyMonitor').innerHTML = '<tr><td colspan="7" class="td text-slate-400">Belum ada pegawai. Tambahkan di tab Kelola Pegawai.</td></tr>'; return; }
+  $('tbodyMonitor').innerHTML = items.map(it => {
+    const cells = KATEGORI.map(k => {
+      const url = it.files[k.key];
+      return `<td class="td">${url
+        ? `<a href="${esc(url)}" target="_blank" rel="noopener" class="chip-ok hover:bg-emerald-200" title="Buka file ${k.label}">✅ Buka</a>`
+        : '<span class="chip-no">❌</span>'}</td>`;
+    }).join('');
+    return `<tr class="${it.lengkap ? 'bg-emerald-50/60' : ''} hover:bg-slate-50">
+      <td class="td font-medium text-slate-800">${esc(it.nama)}</td>${cells}
+      <td class="td">${it.lengkap
+        ? '<span class="rounded-full bg-emerald-600 text-white px-2.5 py-1 text-xs font-bold">LENGKAP</span>'
+        : `<span class="rounded-full bg-rose-100 text-rose-600 px-2.5 py-1 text-xs font-bold">BELUM ${it.terupload}/5</span>`}</td>
+    </tr>`;
+  }).join('');
+}
+$('bulanAdmin').addEventListener('change', loadMonitor);
+$('btnRefreshMonitor').addEventListener('click', loadMonitor);
+
+/* Kelola Pegawai */
+async function loadPegawaiTable() {
+  $('tbodyPegawai').innerHTML = '<tr><td colspan="4" class="td text-slate-400">Memuat…</td></tr>';
+  try {
+    const res = await api('listPegawai');
+    state.pegawai = res.pegawai;
+    $('tbodyPegawai').innerHTML = state.pegawai.length ? state.pegawai.map((p, i) => `
+      <tr class="hover:bg-slate-50">
+        <td class="td text-slate-400">${i + 1}</td>
+        <td class="td font-medium text-slate-800">${esc(p.nama)}</td>
+        <td class="td"><code class="text-xs bg-slate-100 rounded px-1.5 py-0.5">${esc(p.id)}</code></td>
+        <td class="td text-right whitespace-nowrap">
+          <button data-act="edit" data-id="${esc(p.id)}" class="btn-ghost !px-2.5 !py-1.5 !text-xs">✏️ Edit</button>
+          <button data-act="del" data-id="${esc(p.id)}" class="btn-ghost !px-2.5 !py-1.5 !text-xs !text-rose-600 !border-rose-200 hover:!bg-rose-50">🗑️ Hapus</button>
+        </td>
+      </tr>`).join('')
+      : '<tr><td colspan="4" class="td text-slate-400">Belum ada pegawai.</td></tr>';
+    $('hintPegawai').textContent = `${state.pegawai.length} pegawai terdaftar — ketik nama untuk mencari.`;
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+$('btnTambah').addEventListener('click', async () => {
+  const nama = $('inputNamaBaru').value.trim();
+  if (!nama) return toast('Nama pegawai tidak boleh kosong.', 'error');
+  try {
+    await api('addPegawai', { pin: state.pin, nama });
+    $('inputNamaBaru').value = '';
+    toast(`Pegawai "${nama}" ditambahkan.`);
+    loadPegawaiTable();
+  } catch (err) { adminErr(err); }
+});
+
+$('tbodyPegawai').addEventListener('click', async e => {
+  const btn = e.target.closest('button[data-act]'); if (!btn) return;
+  const p = state.pegawai.find(x => x.id === btn.dataset.id); if (!p) return;
+  if (btn.dataset.act === 'edit') {
+    editId = p.id; $('inputEditNama').value = p.nama; $('modalEdit').classList.remove('hidden');
+  } else if (btn.dataset.act === 'del') {
+    if (!confirm(`Hapus pegawai "${p.nama}"?\nArsip dokumen di Drive & DataUpload TIDAK ikut terhapus.`)) return;
+    try { await api('deletePegawai', { pin: state.pin, id: p.id }); toast('Pegawai dihapus.'); loadPegawaiTable(); }
+    catch (err) { adminErr(err); }
+  }
+});
+
+$('btnSimpanEdit').addEventListener('click', async () => {
+  const nama = $('inputEditNama').value.trim();
+  if (!nama) return toast('Nama tidak boleh kosong.', 'error');
+  try {
+    await api('updatePegawai', { pin: state.pin, id: editId, nama });
+    $('modalEdit').classList.add('hidden');
+    toast('Nama pegawai diperbarui.');
+    loadPegawaiTable();
+  } catch (err) { adminErr(err); }
+});
+$('btnBatalEdit').addEventListener('click', () => $('modalEdit').classList.add('hidden'));
+$('modalBackdrop').addEventListener('click', () => $('modalEdit').classList.add('hidden'));
+
+/* ---------------- Init ---------------- */
+(function init() {
+  const cm = currentMonth();
+  $('bulanPegawai').value = cm;
+  $('bulanAdmin').value = cm;
+  showView('home');
+  loadPegawai();
+})();
+</script>
 </body>
 </html>
